@@ -11,7 +11,7 @@ DEFAULT_TIME = [("hour",12),("minute",0),("second",0)]
 # {amount} (spent) on {object} (paid) (by|from|using) {payment method}
 # {amount} (transferred) from {account} (transferred) to {target}
 
-class ParsedFinanceFolder():
+class ParsedFinanceFolder(object):
     def __init__(self,folder_name):
         self.odf_folder = odf.DocFolder(folder_name)
         self.payment_file = self.odf_folder.child_file("Payments")
