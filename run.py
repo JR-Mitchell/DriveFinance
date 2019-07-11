@@ -17,7 +17,7 @@ if __name__ == "__main__":
     args = [item for item in args if args[item]]
     if len(args) == 0:
         myFolder = rmu.FinanceInfoObject("JR Finances")
-        print(myFolder.read_payments.to_string())
+        if myFolder.send_bool: myFolder.clear_payments()
     elif len(args) == 1:
         if args[0] == "tamper":
             print("not yet implemented!")

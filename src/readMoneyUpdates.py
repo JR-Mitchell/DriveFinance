@@ -20,7 +20,7 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
     def __init__(self,foldername):
         super(FinanceInfoObject,self).__init__(foldername)
         if os.path.isfile("databases/{}.h5".format(foldername)):
-            other_data = pd.read_hdf("databases/{}.h5".format(foldername))
+            other_data = pd.read_hdf("databases/{}.h5".format(foldername),"payments")
             if not other_data.empty:
                 other_data = other_data.drop(other_data[other_data.id_time == self.timestamp].index)
                 if not other_data.empty:
@@ -28,5 +28,8 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                 else:
                     self.all_payments = self.read_payments
         else:
-            pd.DataFrame().to_hdf("databases/{}.h5".format(foldername),"cash_transfer")
             self.all_payments = self.read_payments
+        self.all_payments.to_hdf("databases/{}.h5".format(foldername),"payments",mode='a')
+
+    def clear_payments(self):
+        self.payment_file.write_from_string(get_new_blank_doc)
