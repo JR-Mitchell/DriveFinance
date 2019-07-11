@@ -2,6 +2,7 @@
 
 import datetime,os
 import src.parseFinanceFolder as pff
+import src.createTexReports as tex
 import pandas as pd
 
 def get_clean_slate():
@@ -33,3 +34,33 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
 
     def clear_payments(self):
         self.payment_file.write_from_string(get_new_blank_doc)
+
+    def get_purchases_time_period(self,):
+        pass
+
+    def get_budget_time_period(self,):
+        pass
+
+    def get_transfers_time_period(self,):
+        pass
+
+    def get_balances(self):
+        """
+        Returns the numerical balance for each account
+        """
+        pass #TODO
+
+    @classmethod
+    def get_sorted_data(self,data,key,n):
+        names = data[key]
+        amounts = []
+        for name in names: amounts.append(sum(data.loc[data[key] == name].amount))
+        dictitems = zip(names,amounts)
+        dictitems = sorted(dictitems,key=lambda item: item[1],reverse=True)
+        if len(dictitems) > n:
+            otheritems = dictitems[n-1:]
+            dictitems = dictitems[:n-1]
+            othersum = sum([item[1] for item in otheritems])
+            dictitems.append(("other",othersum))
+        return dictitems
+
