@@ -8,7 +8,7 @@ BST = pytz.timezone('Europe/London')
 UTC = pytz.utc
 SCOPES = 'https://www.googleapis.com/auth/drive'
 
-class DocObject():
+class DocObject(object):
     def __init__(self):
         self.store = file.Storage('token.json')
         self.creds = self.store.get()
@@ -48,7 +48,7 @@ class DocFolder(DocObject):
 
         :param: folder_name: a string identifying the name of the folder in the user's drive
         """
-        super().__init__()
+        super(DocFolder,self).__init__()
         self.folder_name = folder_name
         folderResults = self.get_all_results(fields="nextPageToken, files(id,capabilities)",pageSize=50,q="name = '{}'".format(folder_name))
         folderIds = [item['id'] for item in folderResults if item['capabilities']['canListChildren']]
@@ -91,7 +91,7 @@ class DocFile(DocObject):
 
         :param: filename: the name of the file
         """
-        super().__init__()
+        super(DocFile,self).__init__()
         self.filename = filename
         fileIds = self.get_all_results(fields="nextPageToken, files(id)",pageSize=50,q="name = {}".format(filename))
         if len(fileIds) == 0:
@@ -115,7 +115,7 @@ class DocFile(DocObject):
     def _read_to_string(self,mimeType="text/plain"):
         myFile = StringIO.StringIO()
         request = self.service.files().export_media(fileId = self.file_id,mimeType=mimeType)
-        downlaoder = MediaIoBaseDownload(myFile,request)
+        downloader = MediaIoBaseDownload(myFile,request)
         done = False
         while done is False:
             status, done = downloader.next_chunk()
@@ -133,9 +133,6 @@ class DocFile(DocObject):
     def assert_no_changes(self):
         new_str = self._read_to_string()
         if new_str != initial_content: raise Exception("In the time between initial load and function call, the file {} has been modified!".format(self.filename))
-
-    @property
-    def __
 
 class ChildDocFile(DocFile):
     def __init__(self,parent,filename):

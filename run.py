@@ -6,6 +6,8 @@
 #   -t --tamper: allows access to data in order to make changes
 #   -d --defaults: provides config.ini with the default config options
 
+import src.readMoneyUpdates as rmu
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -14,8 +16,8 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     args = [item for item in args if args[item]]
     if len(args) == 0:
-        print("not yet implemented!")
-        parser.print_help()
+        myFolder = rmu.FinanceInfoObject("JR Finances")
+        print(myFolder.read_payments.to_string())
     elif len(args) == 1:
         if args[0] == "tamper":
             print("not yet implemented!")
