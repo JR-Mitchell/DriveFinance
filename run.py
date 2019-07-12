@@ -20,8 +20,8 @@ if __name__ == "__main__":
         if myFolder.send_bool: myFolder.clear_payments()
     elif len(args) == 1:
         if args[0] == "tamper":
-            print("not yet implemented!")
-            parser.print_help()
+            myFolder = rmu.FinanceInfoObject("JR Finances")
+            myFolder.open_dialogue()
         elif args[0] == "defaults":
             print("not yet implemented!")
             parser.print_help()

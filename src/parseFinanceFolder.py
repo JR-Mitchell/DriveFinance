@@ -13,6 +13,7 @@ DEFAULT_TIME = [("hour",12),("minute",0),("second",0)]
 
 class ParsedFinanceFolder(object):
     def __init__(self,folder_name):
+        self.folder_name = folder_name
         self.odf_folder = odf.DocFolder(folder_name)
         self.payment_file = self.odf_folder.child_file("Payments")
         self.read_payments,self.timestamp,self.send_bool = self.parse_string_text(self.payment_file.initial_content)

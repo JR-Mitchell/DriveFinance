@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import datetime,os
 import src.parseFinanceFolder as pff
 import src.createTexReports as tex
 import pandas as pd
+import re
 
 def get_clean_slate():
     """
@@ -18,6 +20,7 @@ def get_clean_slate():
     return template_str.format(**fdict)
 
 class FinanceInfoObject(pff.ParsedFinanceFolder):
+    dialogue_functions = {}
     def __init__(self,foldername):
         super(FinanceInfoObject,self).__init__(foldername)
         if os.path.isfile("databases/{}.h5".format(foldername)):
@@ -25,12 +28,69 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
             if not other_data.empty:
                 other_data = other_data.drop(other_data[other_data.id_time == self.timestamp].index)
                 if not other_data.empty:
-                    self.all_payments = other_data.append(self.read_payments,idgnore_index=True)
+                    self.all_payments = other_data.append(self.read_payments,ignore_index=True)
                 else:
                     self.all_payments = self.read_payments
         else:
             self.all_payments = self.read_payments
-        self.all_payments.to_hdf("databases/{}.h5".format(foldername),"payments",mode='a')
+        self.save_payments()
+
+    def _dialogueCallable(flist,*args):
+        def decorator(function):
+            def wrapped(*passedargs):
+                if len(passedargs) != len(args) + 1:
+                    print("ArgumentError: The incorrect number of arguments were passed")
+                else:
+                    newargs = [passedargs[0]]
+                    failure = False
+                    for i,arg in enumerate(passedargs[1:]):
+                        try:
+                            newargs.append(args[i](arg))
+                        except:
+                            print("ArgumentError: Failed to cast argument {} to the correct type".format(i))
+                            failure = True
+                    if not failure:
+                        function(*newargs)
+            flist[function.__name__] = wrapped
+            return function
+        return decorator
+
+    @_dialogueCallable(dialogue_functions)
+    def save_payments(self):
+        self.all_payments.to_hdf("databases/{}.h5".format(self.folder_name),"payments",mode='a')
+
+    @_dialogueCallable(dialogue_functions)
+    def print_payments(self):
+        print(self.all_payments.to_string())
+
+    @_dialogueCallable(dialogue_functions,int,float,str,str,pd.Timestamp,pd.Timestamp,str)
+    def insert_payment_row(self,index,amount,fro,to,id_time,date_made,type):
+        line = pd.DataFrame({"amount":amount,"from":fro,"to":to,"id_time":id_time,"date_made":date_made,"type":type},index=[index-0.5])[["amount","from","to","id_time","date_made","type"]]
+        self.all_payments = self.all_payments.append(line, ignore_index=False).sort_index().reset_index(drop=True)
+
+    def open_dialogue(self):
+        exit_code = False
+        while not exit_code:
+            print(">>>",end=' ')
+            code = raw_input().strip()
+            if code == "exit()":
+                exit_code = True
+            elif code == "ls()":
+                print(self.dialogue_functions.keys())
+            else:
+                split = re.search(r"^(?:(\w+)\s*=)?\s*(\w+)\(((?:[a-zA-Z0-9_.:\- ]+,)*(?:[a-zA-Z0-9_.:\- ]+)?)\)\s*$",code)
+                if split:
+                    varname = split.group(1)
+                    function = split.group(2)
+                    args = []
+                    if not (split.group(3) == None or split.group(3).strip() == ""):
+                        args = [item.strip() for item in split.group(3).split(",")]
+                    if function in self.dialogue_functions:
+                        self.dialogue_functions[function](self,*args)
+                    else:
+                        print("CallError: No function of that name")
+                else:
+                    print("CallError: Input did not match function call form")
 
     def clear_payments(self):
         self.payment_file.write_from_string(get_new_blank_doc)
