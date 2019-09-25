@@ -33,7 +33,25 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                     self.all_payments = self.read_payments
         else:
             self.all_payments = self.read_payments
+        self.config = {}
+        configtxt = ""
+        with open("config.ini","r") as configFile:
+            configtxt = configFile.read()
+        self.config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
+        self.report_config = {}
+        configtxt = ""
+        with open("report_config.ini","r") as configFile:
+            configtxt = configFile.read()
+        self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
+        for key in self.report_config:
+            self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
+        self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
+        self.all_payments.loc[self.all_payments["from"] == "__default_from_account",'from'] = self.config["__default_from_account"]
+        self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
         self.save_payments()
+        for key in self.report_config:
+            if ["autodo","1"] in self.report_config[key] and ["autodo","0"] not in self.report_config[key]:
+                self.generate_report(key)
 
     def _dialogueCallable(flist,*args):
         def decorator(function):
@@ -68,6 +86,32 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
         line = pd.DataFrame({"amount":amount,"from":fro,"to":to,"id_time":id_time,"date_made":date_made,"type":type},index=[index-0.5])[["amount","from","to","id_time","date_made","type"]]
         self.all_payments = self.all_payments.append(line, ignore_index=False).sort_index().reset_index(drop=True)
 
+    @_dialogueCallable(dialogue_functions,str)
+    def generate_report(self,key):
+        freq = None
+        for item in self.report_config[key]:
+            if item[0] == "frequency": freq=item[1]
+        assert freq is not None, "No frequency tag!"
+        todayperiod = pd.Timestamp.now().to_period(freq)
+        transfers_in_period = self.all_payments.loc[self.all_payments.date_made.dt.to_period(freq) == todayperiod]
+        account_details = self.all_payments.copy()
+        account_details.query("type != 'purchase'",inplace=True)
+        account_details["from"] = account_details["to"]
+        second_account_details = self.all_payments.copy()
+        second_account_details["amount"] = -second_account_details["amount"]
+        account_details = pd.concat([account_details,second_account_details],ignore_index=True)
+        account_details.drop(inplace=True,columns=["to","id_time","date_made","type"])
+        account_details["amount"] = account_details.groupby(["from"])["amount"].transform("sum")
+        account_details = account_details.drop_duplicates(subset=["from"])
+        report = tex.TexReport(key,datetime.datetime.now(),info_dict={"raw_dataframe":transfers_in_period,"account_details":account_details})
+        for item in self.report_config[key]:
+            if item[0] == "section":
+                report.sections.append(tex.TexSection(item[1]))
+        report.generate_doctext()
+        report.produce_pdf("temptex")
+        self.odf_folder.save_pdf("tmp/temptex.pdf","{}.pdf".format(key))
+        report.clear_tmp("temptex")
+
     def open_dialogue(self):
         exit_code = False
         while not exit_code:
@@ -93,7 +137,7 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                     print("CallError: Input did not match function call form")
 
     def clear_payments(self):
-        self.payment_file.write_from_string(get_new_blank_doc)
+        self.payment_file.write_from_string(get_clean_slate())
 
     def get_purchases_time_period(self,):
         pass

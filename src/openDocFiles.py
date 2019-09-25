@@ -81,7 +81,7 @@ class DocFolder(DocObject):
         if tfid == None:
             raise Exception("No pdf of name {} found in this folder".format(name_in_drive))
         media_body = MediaFileUpload(name_on_disk,resumable=True)
-        service.files().update(fileId=tfid,media_body=media_body).execute()
+        self.service.files().update(fileId=tfid,media_body=media_body).execute()
 
 class DocFile(DocObject):
     def __init__(self,filename):
@@ -109,7 +109,7 @@ class DocFile(DocObject):
         request = self.service.files().update(fileId = self.file_id,media_body=media_body)
         response = None
         while response is None:
-            status,respinse = request.next_chunk()
+            status,response = request.next_chunk()
         myFile.close()
 
     def _read_to_string(self,mimeType="text/plain"):
@@ -132,7 +132,7 @@ class DocFile(DocObject):
 
     def assert_no_changes(self):
         new_str = self._read_to_string()
-        if new_str != initial_content: raise Exception("In the time between initial load and function call, the file {} has been modified!".format(self.filename))
+        if new_str != self.initial_content: raise Exception("In the time between initial load and function call, the file {} has been modified!".format(self.filename))
 
 class ChildDocFile(DocFile):
     def __init__(self,parent,filename):

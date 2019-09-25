@@ -69,16 +69,16 @@ class ParsedFinanceFolder(object):
                     transfer = re.search(r"^(£?\d+(?:.\d\d)?)(?:(?:\stransferred|\staken(?:\sout)?)?\sfrom\s(.+?))?(?:(?:\stransferred)?\sto\s(.+?))?(\staken\sout)?$",line.strip())
                     if transfer:
                         #Transfer. Format: {amount} (transferred|taken (out)) from {account} (transferred) to {target}
-                        amountTransferred = float(purchase.group(1).strip("£"))
-                        if purchase.group(2) is None and purchase.group(3) is None and purchase.group(4) is None:
+                        amountTransferred = float(transfer.group(1).strip("£"))
+                        if transfer.group(2) is None and transfer.group(3) is None and transfer.group(4) is None:
                             raise Exception("No valid format for the line '{}'".format(line))
                         outAccount = "__default_from_account"
                         inAccount = "__default_to_account"
-                        if purchase.group(2) is not None:
-                            outAccount = purchase.group(2).strip()
-                        if purchase.group(3) is not None:
-                            inAccount = purchase.group(3).strip()
-                        lines[index] = [amountSpent,payMethod,spentOn,time_and_date_stamp,date_stamp,"transfer"]
+                        if transfer.group(2) is not None:
+                            outAccount = transfer.group(2).strip()
+                        if transfer.group(3) is not None:
+                            inAccount = transfer.group(3).strip()
+                        lines[index] = [amountTransferred,outAccount,inAccount,time_and_date_stamp,date_stamp,"transfer"]
                     else:
                         raise Exception("No valid format for the line '{}'".format(line))
         for index in control_indices:
