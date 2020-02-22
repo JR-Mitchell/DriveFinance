@@ -57,7 +57,8 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
         def decorator(function):
             def wrapped(*passedargs):
                 if len(passedargs) != len(args) + 1:
-                    print("ArgumentError: The incorrect number of arguments were passed")
+                    print("ArgumentError: The incorrect number of arguments were passed.")
+                    print(args)
                 else:
                     newargs = [passedargs[0]]
                     failure = False
@@ -86,13 +87,21 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
         line = pd.DataFrame({"amount":amount,"from":fro,"to":to,"id_time":id_time,"date_made":date_made,"type":type},index=[index-0.5])[["amount","from","to","id_time","date_made","type"]]
         self.all_payments = self.all_payments.append(line, ignore_index=False).sort_index().reset_index(drop=True)
 
+    @_dialogueCallable(dialogue_functions,int)
+    def print_payment_row(self,index):
+        print(self.all_payments.loc[[index]])
+
     @_dialogueCallable(dialogue_functions,str)
     def generate_report(self,key):
         freq = None
         for item in self.report_config[key]:
             if item[0] == "frequency": freq=item[1]
         assert freq is not None, "No frequency tag!"
+        offset = 0
+        for item in self.report_config[key]:
+            if item[0] == "offset": offset=int(item[1])
         todayperiod = pd.Timestamp.now().to_period(freq)
+        todayperiod -= offset
         transfers_in_period = self.all_payments.loc[self.all_payments.date_made.dt.to_period(freq) == todayperiod]
         account_details = self.all_payments.copy()
         account_details.query("type != 'purchase'",inplace=True)
