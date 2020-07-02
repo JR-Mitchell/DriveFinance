@@ -115,11 +115,26 @@ class FinanceInfoObject():
         self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
         print("Saving payment data...")
         self.save_payments()
+        if self.parsed_folder.send_bool:
+            print("Uploading updated payments sheet...")
+            self.clear_payments()
         print("Done!")
 
     @_dialogueCallable(dialogue_functions)
     def print_names(self):
-        print(self.all_payments["to"].unique())
+        print(sorted(self.all_payments["to"].unique()))
+
+    @_dialogueCallable(dialogue_functions,str,str)
+    def rename_name(self,oldname,newname):
+        self.all_payments.loc[self.all_payments["to"] == oldname,'to'] = newname
+
+    @_dialogueCallable(dialogue_functions)
+    def print_froms(self):
+        print(sorted(self.all_payments["from"].unique()))
+
+    @_dialogueCallable(dialogue_functions,str,str)
+    def rename_from(self,oldname,newname):
+        self.all_payments.loc[self.all_payments["from"] == oldname,'from'] = newname
 
     @_dialogueCallable(dialogue_functions)
     def save_payments(self):
