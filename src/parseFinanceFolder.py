@@ -7,31 +7,48 @@ import pandas as pd
 
 DEFAULT_TIME = [("hour",12),("minute",0),("second",0)]
 
+
+class InputFileReader(object):
+    def __init__(self,child_file):
+        text = child_file.initial_content.lower()
+        lines = text.strip("\xef").strip("\xbb").strip("\xbf").split("\r\n")
+        lines = [line.split("#")[0].strip() for line in lines]
+        self.lines = [line for line in lines if line != ""]
+
+    def __getitem__(self,arg):
+        return self.lines[arg]
+
+    def __iter__(self):
+        return iter(self.lines)
+
 ###
 # {amount} (spent) on {object} (paid) (by|from|using) {payment method}
 # {amount} (transferred) from {account} (transferred) to {target}
-
-class ParsedFinanceFolder(object):
-    def __init__(self,folder_name):
-        self.folder_name = folder_name
-        self.odf_folder = odf.DocFolder(folder_name)
-        self.payment_file = self.odf_folder.child_file("Payments")
-        self.read_payments,self.timestamp,self.send_bool = self.parse_string_text(self.payment_file.initial_content)
-
-    @classmethod
-    def parse_string_text(cls,text):
-        text = text.lower()
-        lines = text.strip("\xef").strip("\xbb").strip("\xbf").split("\r\n")
-        lines = [line.split("#")[0].strip() for line in lines]
-        lines = [line for line in lines if line != ""]
+class InputPaymentData(InputFileReader):
+    """
+        self.read_payments
+        self.send_bool
+        self.timestamp
+        self.additional_text
+        self.lines
+    """
+    def __init__(self,child_file):
+        super(InputPaymentData,self).__init__(child_file)
+        #Setting up variables for this initialisation that will have values set to them
+        self.additional_text = ""
         timestamp = None
         timestampindex = None
         time_and_date_stamp = None
         date_stamp = None
         send_bool = False
         control_indices = []
-        for index, line in enumerate(lines):
-            if line[0] == "[": #a control tag
+        #Passing through the lines and parsing them one by one
+        for index, line in enumerate(self.lines):
+            if send_bool:
+                control_indices.insert(0,index)
+                self.additional_text += line
+                self.additional_text += "\n"
+            elif line[0] == "[": #a control tag
                 control_indices.insert(0,index)
                 if "timestamp of last calculation:" in line:
                     if timestamp is not None:
@@ -53,6 +70,7 @@ class ParsedFinanceFolder(object):
                     date_stamp = pd.Timestamp(**date_stamp)
                 elif line.lower() == "[send]":
                     send_bool = True
+                    self.additional_text += "[datenow: {}]\n".format(date_stamp.strftime("%d/%m/%y"))
                 else:
                     raise Exception("No valid format for the line '{}'".format(line))
             else:
@@ -64,7 +82,7 @@ class ParsedFinanceFolder(object):
                     payMethod = "__default_payment"
                     if purchase.group(3) is not None:
                         payMethod = purchase.group(3).strip()
-                    lines[index] = [amountSpent,payMethod,spentOn,time_and_date_stamp,date_stamp,"purchase"]
+                    self.lines[index] = [amountSpent,payMethod,spentOn,time_and_date_stamp,date_stamp,"purchase"]
                 else:
                     transfer = re.search(r"^(£?\d+(?:.\d\d)?)(?:(?:\stransferred|\staken(?:\sout)?)?\sfrom\s(.+?))?(?:(?:\stransferred)?\sto\s(.+?))?(\staken\sout)?$",line.strip())
                     if transfer:
@@ -78,12 +96,41 @@ class ParsedFinanceFolder(object):
                             outAccount = transfer.group(2).strip()
                         if transfer.group(3) is not None:
                             inAccount = transfer.group(3).strip()
-                        lines[index] = [amountTransferred,outAccount,inAccount,time_and_date_stamp,date_stamp,"transfer"]
+                        self.lines[index] = [amountTransferred,outAccount,inAccount,time_and_date_stamp,date_stamp,"transfer"]
                     else:
                         raise Exception("No valid format for the line '{}'".format(line))
+        #getting rid of the "control indices"
         for index in control_indices:
-            del lines[index]
-        finance_grid = zip(*lines)
+            del self.lines[index]
+        #storing object variables
+        finance_grid = zip(*self.lines)
         finance_grid = zip(("amount","from","to","id_time","date_made","type"),finance_grid)
-        finance_grid = pd.DataFrame(OrderedDict(finance_grid))
-        return finance_grid,time_and_date_stamp,send_bool
+        self.read_payments = pd.DataFrame(OrderedDict(finance_grid))
+        self.timestamp = time_and_date_stamp
+        self.send_bool = send_bool
+
+class ParsedFinanceFolder(object):
+    def __init__(self,folder_name):
+        self.folder_name = folder_name
+        self.odf_folder = odf.DocFolder(folder_name)
+        self.payment_file = self.odf_folder.child_file("Payments")
+        self.parsed_payment_file = InputPaymentData(self.payment_file)
+
+    #Following code should, at some point, be deprecated
+
+    @property
+    def read_payments(self):
+        return self.parsed_payment_file.read_payments
+
+    @property
+    def timestamp(self):
+        return self.parsed_payment_file.timestamp
+
+    @property
+    def send_bool(self):
+        return self.parsed_payment_file.send_bool
+
+    @property
+    def additional_text(self):
+        return self.parsed_payment_file.additional_text
+

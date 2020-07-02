@@ -13,6 +13,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-t','--tamper',action='store_const',const=True,help='open a UI for modifying stored financial data')
     parser.add_argument('-d','--defaults',action='store_const',const=True,help='reset config.ini to contain the default configuration options')
+    #parser.add_argument('-nr','--noreport',action='store_const',const=True,help='override default behaviour to prevent the generation of reports')
+    #parser.add_argument('-ni','--noinput',action='store_const',const=True,help='override default behaviour to prevent the reading of drive input files')
     args = vars(parser.parse_args())
     args = [item for item in args if args[item]]
     if len(args) == 0:

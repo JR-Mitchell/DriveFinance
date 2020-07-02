@@ -7,14 +7,18 @@ import src.createTexReports as tex
 import pandas as pd
 import re
 
-def get_clean_slate():
+def get_clean_slate(additional_str):
     """
     Creates a clean payment sheet to be fed back to the drive.
     """
     now = datetime.datetime.now()
     lastdate = now.strftime("%d/%m/%y")
+    if "[datenow: " in additional_str:
+        remaining_time_text = additional_str
+    else:
+        remaining_time_text = "[datenow: {}]\n".format(lastdate)
     timestamp=now.time()
-    fdict = {"dbudget":"£10","dremain":"£5","wremain":"£5","lastdate":lastdate,"timestamp":timestamp}
+    fdict = {"dbudget":"£10","dremain":"£5","wremain":"£5","remtext":remaining_time_text,"timestamp":timestamp}
     with open("templates/basic_file.txt","r") as myFile:
         template_str = myFile.read()
     return template_str.format(**fdict)
@@ -22,17 +26,21 @@ def get_clean_slate():
 class FinanceInfoObject(pff.ParsedFinanceFolder):
     dialogue_functions = {}
     def __init__(self,foldername):
+        ##Loading in files and shizz
         super(FinanceInfoObject,self).__init__(foldername)
+        #existence / overwrite checks on data
         if os.path.isfile("databases/{}.h5".format(foldername)):
             other_data = pd.read_hdf("databases/{}.h5".format(foldername),"payments")
             if not other_data.empty:
                 other_data = other_data.drop(other_data[other_data.id_time == self.timestamp].index)
+                #specifically checking if the incoming payments need to overwrite
                 if not other_data.empty:
                     self.all_payments = other_data.append(self.read_payments,ignore_index=True)
                 else:
                     self.all_payments = self.read_payments
         else:
             self.all_payments = self.read_payments
+        #Reading in config
         self.config = {}
         configtxt = ""
         with open("config.ini","r") as configFile:
@@ -40,15 +48,18 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
         self.config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         self.report_config = {}
         configtxt = ""
+        #Reading in report config
         with open("report_config.ini","r") as configFile:
             configtxt = configFile.read()
         self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         for key in self.report_config:
             self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
+        #Payment preprocessing
         self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
         self.all_payments.loc[self.all_payments["from"] == "__default_from_account",'from'] = self.config["__default_from_account"]
         self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
         self.save_payments()
+        #Report generation
         for key in self.report_config:
             if ["autodo","1"] in self.report_config[key] and ["autodo","0"] not in self.report_config[key]:
                 self.generate_report(key)
@@ -73,6 +84,10 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
             flist[function.__name__] = wrapped
             return function
         return decorator
+
+    @_dialogueCallable(dialogue_functions)
+    def print_names(self):
+        print(self.all_payments["to"].unique())
 
     @_dialogueCallable(dialogue_functions)
     def save_payments(self):
@@ -146,7 +161,7 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                     print("CallError: Input did not match function call form")
 
     def clear_payments(self):
-        self.payment_file.write_from_string(get_clean_slate())
+        self.payment_file.write_from_string(get_clean_slate(self.additional_text))
 
     def get_purchases_time_period(self,):
         pass

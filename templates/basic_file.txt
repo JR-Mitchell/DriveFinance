@@ -1,6 +1,6 @@
 [timestamp of last calculation: {timestamp}]
-[datenow: {lastdate}]
-#Note: if the date above shows yesterday's date, add a second copy with today's date below before adding any more transactions.
+#Note: if the date below shows yesterday's date, add a second copy with today's date below before adding any more transactions.
+{remtext}
 
 
 
@@ -9,10 +9,8 @@
 
 
 
-
-
-#Add [send] tag anywhere in the doc if you are online to get a fresh sheet
-#After adding the send tag, do not add any more payments until you have been given a fresh sheet
+#Add [send] tag on a line to send off all the payments above that line
+#After adding the send tag, do not add any more payments until you have been given an updated sheet with the sent payments gone
 #Example usages:
 #£3.10 spent on bus fare paid by card 
 #15 transferred from cash to JR (code assumes all numbers in £)
