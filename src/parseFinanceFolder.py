@@ -21,6 +21,11 @@ class InputFileReader(object):
     def __iter__(self):
         return iter(self.lines)
 
+class InputShortcuts(InputFileReader):
+    def __init__(self,child_file):
+        super(InputShortcuts,self).__init__(child_file)
+        self.dict = dict([[item.strip() for item in line.split(":")] for line in self.lines])
+
 ###
 # {amount} (spent) on {object} (paid) (by|from|using) {payment method}
 # {amount} (transferred) from {account} (transferred) to {target}
@@ -32,7 +37,7 @@ class InputPaymentData(InputFileReader):
         self.additional_text
         self.lines
     """
-    def __init__(self,child_file):
+    def __init__(self,child_file,replacementDict):
         super(InputPaymentData,self).__init__(child_file)
         #Setting up variables for this initialisation that will have values set to them
         self.additional_text = ""
@@ -53,6 +58,11 @@ class InputPaymentData(InputFileReader):
             elif line[0] == "[": #a control tag
                 control_indices.insert(0,index)
                 self.parse_control_tag(line,index)
+            elif line[0] == "*": #a shortcut
+                if line.strip() in replacementDict:
+                    self.parse_payment_line(replacementDict[line.strip()],index)
+                else:
+                    raise Exception("No valid shortcut for the line '{}'".format(line))
             else:
                 self.parse_payment_line(line,index)
         #getting rid of the "control indices"
@@ -122,7 +132,9 @@ class ParsedFinanceFolder(object):
         self.folder_name = folder_name
         self.odf_folder = odf.DocFolder(folder_name)
         self.payment_file = self.odf_folder.child_file("Payments")
-        self.parsed_payment_file = InputPaymentData(self.payment_file)
+        self.shortcut_file = self.odf_folder.child_file("Shortcuts")
+        self.parsed_shortcut_file = InputShortcuts(self.shortcut_file)
+        self.parsed_payment_file = InputPaymentData(self.payment_file,self.parsed_shortcut_file.dict)
 
     #Following code should, at some point, be deprecated
 
