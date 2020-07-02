@@ -23,24 +23,16 @@ def get_clean_slate(additional_str):
         template_str = myFile.read()
     return template_str.format(**fdict)
 
-class FinanceInfoObject(pff.ParsedFinanceFolder):
+class FinanceInfoObject():
     dialogue_functions = {}
     def __init__(self,foldername):
-        ##Loading in files and shizz
-        super(FinanceInfoObject,self).__init__(foldername)
-        #existence / overwrite checks on data
+        self.folder_name = foldername
+        self.parsed_folder = None
+        self.all_payments = None
+        #Get the database
         if os.path.isfile("databases/{}.h5".format(foldername)):
-            other_data = pd.read_hdf("databases/{}.h5".format(foldername),"payments")
-            if not other_data.empty:
-                other_data = other_data.drop(other_data[other_data.id_time == self.timestamp].index)
-                #specifically checking if the incoming payments need to overwrite
-                if not other_data.empty:
-                    self.all_payments = other_data.append(self.read_payments,ignore_index=True)
-                else:
-                    self.all_payments = self.read_payments
-        else:
-            self.all_payments = self.read_payments
-        #Reading in config
+            self.all_payments = pd.read_hdf("databases/{}.h5".format(foldername),"payments")
+        #Read in the config
         self.config = {}
         configtxt = ""
         with open("config.ini","r") as configFile:
@@ -54,15 +46,24 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
         self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         for key in self.report_config:
             self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
-        #Payment preprocessing
-        self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
-        self.all_payments.loc[self.all_payments["from"] == "__default_from_account",'from'] = self.config["__default_from_account"]
-        self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
-        self.save_payments()
-        #Report generation
-        for key in self.report_config:
-            if ["autodo","1"] in self.report_config[key] and ["autodo","0"] not in self.report_config[key]:
-                self.generate_report(key)
+
+    @property
+    def read_payments(self):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        return self.parsed_folder.read_payments
+
+    @property
+    def timestamp(self):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        return self.parsed_folder.timestamp
+
+    @property
+    def additional_text(self):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        return self.parsed_folder.additional_text
 
     def _dialogueCallable(flist,*args):
         def decorator(function):
@@ -84,6 +85,37 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
             flist[function.__name__] = wrapped
             return function
         return decorator
+
+    @_dialogueCallable(dialogue_functions)
+    def generate_default_reports(self):
+        print("Generating default reports...")
+        for key in self.report_config:
+            if ["autodo","1"] in self.report_config[key] and ["autodo","0"] not in self.report_config[key]:
+                self.generate_report(key)
+        print("Done!")
+
+    @_dialogueCallable(dialogue_functions)
+    def read_drive_files(self):
+        print("Reading files from drive...")
+        self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        if self.all_payments is not None:
+            if not self.all_payments.empty:
+                self.all_payments = self.all_payments.drop(self.all_payments[self.all_payments.id_time == self.timestamp].index)
+                #specifically checking if the incoming payments need to overwrite
+                if not self.all_payments.empty:
+                    self.all_payments = self.all_payments.append(self.read_payments,ignore_index=True)
+                else:
+                    self.all_payments = self.read_payments
+        else:
+            self.all_payments = self.read_payments
+        print("Applying post-processing...")
+        #Post-processing
+        self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
+        self.all_payments.loc[self.all_payments["from"] == "__default_from_account",'from'] = self.config["__default_from_account"]
+        self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
+        print("Saving payment data...")
+        self.save_payments()
+        print("Done!")
 
     @_dialogueCallable(dialogue_functions)
     def print_names(self):
@@ -108,6 +140,8 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
 
     @_dialogueCallable(dialogue_functions,str)
     def generate_report(self,key):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
         freq = None
         for item in self.report_config[key]:
             if item[0] == "frequency": freq=item[1]
@@ -133,7 +167,7 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                 report.sections.append(tex.TexSection(item[1]))
         report.generate_doctext()
         report.produce_pdf("temptex")
-        self.odf_folder.save_pdf("tmp/temptex.pdf","{}.pdf".format(key))
+        self.parsed_folder.odf_folder.save_pdf("tmp/temptex.pdf","{}.pdf".format(key))
         report.clear_tmp("temptex")
 
     def open_dialogue(self):
@@ -161,22 +195,7 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
                     print("CallError: Input did not match function call form")
 
     def clear_payments(self):
-        self.payment_file.write_from_string(get_clean_slate(self.additional_text))
-
-    def get_purchases_time_period(self,):
-        pass
-
-    def get_budget_time_period(self,):
-        pass
-
-    def get_transfers_time_period(self,):
-        pass
-
-    def get_balances(self):
-        """
-        Returns the numerical balance for each account
-        """
-        pass #TODO
+        self.parsed_folder.payment_file.write_from_string(get_clean_slate(self.additional_text))
 
     @classmethod
     def get_sorted_data(self,data,key,n):
@@ -191,4 +210,3 @@ class FinanceInfoObject(pff.ParsedFinanceFolder):
             othersum = sum([item[1] for item in otheritems])
             dictitems.append(("other",othersum))
         return dictitems
-
