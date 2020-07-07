@@ -6,6 +6,7 @@ import src.parseFinanceFolder as pff
 import src.createTexReports as tex
 import pandas as pd
 import re
+import time
 
 def get_clean_slate(additional_str):
     """
@@ -60,6 +61,19 @@ class FinanceInfoObject():
         return self.parsed_folder.timestamp
 
     @property
+    def scheduled_payments(self):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        return self.parsed_folder.scheduled_payments
+
+    @property
+    def scheduled_timestamp(self):
+        if self.parsed_folder is None:
+            self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        return self.parsed_folder.scheduled_timestamp
+
+
+    @property
     def additional_text(self):
         if self.parsed_folder is None:
             self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
@@ -98,6 +112,7 @@ class FinanceInfoObject():
     def read_drive_files(self):
         print("Reading files from drive...")
         self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
+        print("Inserting payment info...")
         if self.all_payments is not None:
             if not self.all_payments.empty:
                 self.all_payments = self.all_payments.drop(self.all_payments[self.all_payments.id_time == self.timestamp].index)
@@ -106,8 +121,20 @@ class FinanceInfoObject():
                     self.all_payments = self.all_payments.append(self.read_payments,ignore_index=True)
                 else:
                     self.all_payments = self.read_payments
+            else:
+                self.all_payments = self.read_payments
         else:
             self.all_payments = self.read_payments
+        print("Inserting scheduled payment info...")
+        if not self.all_payments.empty:
+            self.all_payments = self.all_payments.drop(self.all_payments[self.all_payments.id_time == self.scheduled_timestamp].index)
+            #specifically checking if the incoming payments need to overwrite
+            if not self.all_payments.empty:
+                self.all_payments = self.all_payments.append(self.scheduled_payments,ignore_index=True)
+            else:
+                self.all_payments = self.scheduled_payments
+        else:
+            self.all_payments = self.scheduled_payments
         print("Applying post-processing...")
         #Post-processing
         self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
@@ -118,6 +145,9 @@ class FinanceInfoObject():
         if self.parsed_folder.send_bool:
             print("Uploading updated payments sheet...")
             self.clear_payments()
+        if self.parsed_folder.parsed_schedule_file.send_bool:
+            print("Uploading updated schedule sheet...")
+            self.parsed_folder.update_schedule_file()
         print("Done!")
 
     @_dialogueCallable(dialogue_functions)
@@ -210,6 +240,7 @@ class FinanceInfoObject():
                     print("CallError: Input did not match function call form")
 
     def clear_payments(self):
+        time.sleep(1)
         self.parsed_folder.payment_file.write_from_string(get_clean_slate(self.additional_text))
 
     @classmethod

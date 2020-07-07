@@ -26,6 +26,109 @@ class InputShortcuts(InputFileReader):
         super(InputShortcuts,self).__init__(child_file)
         self.dict = dict([[item.strip() for item in line.split(":")] for line in self.lines])
 
+# date:command:recurrenceperiod:recurrencenumber:end
+class InputScheduledData(object):
+    def __init__(self,child_file,replacementDict):
+        today = pd.Timestamp(datetime.datetime.now().date())
+        text = child_file.initial_content.lower()
+        self.lines = text.strip("\xef").strip("\xbb").strip("\xbf").split("\r\n")
+        self.lines_to_process = []
+        indices_to_remove = []
+        self.send_bool = False
+        #get datetimestamp
+        dateTimeStampLine = self.lines.pop(0)
+        dateTimeStamp = dateTimeStampLine.replace(" ","/").replace(":","/").replace(".","/").strip().split("/")
+        dateTimeStamp = dict(zip(("day","month","year","hour","minute","second","microsecond"),[int(item) for item in dateTimeStamp]))
+        dateTimeStamp["year"] += 2000
+        self.date_time_stamp = pd.Timestamp(**dateTimeStamp)
+        for index,line in enumerate(self.lines):
+            validpart = line.split("#")[0].strip()
+            if validpart != "":
+                lineDate,lineCommand,linePeriod,lineNumber,endDate = validpart.split(":")
+                ##Check if the date has passed
+                endDateBkup = endDate
+                lineDate = lineDate.strip().split("/")
+                lineDate = dict(zip(("day","month","year"),[int(item) for item in lineDate]))
+                lineDate["year"] += 2000
+                lineDate = pd.Timestamp(**lineDate)
+                endDateIsntNever = False
+                if endDate.strip() != "never":
+                    endDateIsntNever = True
+                    endDate = endDate.strip().split("/")
+                    endDate = dict(zip(("day","month","year"),[int(item) for item in endDate]))
+                    endDate["year"] += 2000
+                    endDate = pd.Timestamp(**endDate)
+                if today > lineDate:
+                    self.send_bool = True
+                    ##Update the date
+                    kwds = {linePeriod:int(lineNumber)}
+                    diff = pd.tseries.offsets.DateOffset(**kwds)
+                    newDate = lineDate + diff
+                    if endDateIsntNever and newDate > endDate:
+                        indices_to_remove.insert(0,index)
+                    else:
+                        self.lines[index] = ":".join([
+                            newDate.strftime("%d/%m/%y"),
+                            lineCommand,
+                            linePeriod,
+                            lineNumber,
+                            endDateBkup
+                        ])
+                        if len(line.split("#")) > 1:
+                            self.lines[index] += "#"
+                            self.lines[index] += "#".join(line.split("#")[1:])
+                    ##Add to lines_to_process
+                    if lineCommand[0] == "*":
+                        if lineCommand in replacementDict:
+                            self.lines_to_process.append([replacementDict[lineCommand],lineDate])
+                        else:
+                            raise Exception("No valid shortcut for the line '{}'".format(line))
+                    else:
+                        self.lines_to_process.append([lineCommand,lineDate])
+        for index in indices_to_remove:
+            del self.lines[index]
+        for index,line in enumerate(self.lines_to_process):
+                self.parse_payment_line(line,index)
+        #storing object variables
+        finance_grid = zip(*self.lines_to_process)
+        finance_grid = zip(("amount","from","to","id_time","date_made","type"),finance_grid)
+        self.read_payments = pd.DataFrame(OrderedDict(finance_grid))
+        if self.send_bool:
+            self.new_file_text = pd.Timestamp.now().strftime("%d/%m/%y %H:%M:%S.%f")+"\n"
+        else:
+            self.new_file_text = self.date_time_stamp.strftime("%d/%m/%y %H:%M:%S.%f")+"\n"
+        for line in self.lines:
+            self.new_file_text += line + "\n"
+
+    def parse_payment_line(self,lineobj,index):
+        line,dateNow = lineobj
+        purchase = re.search(r"^(?:spent\s)?(£?\d+(?:.\d\d)?)(?:\sspent)?\son\s(.+?)(?:(?:\spaid)?\s(?:by|from|using)(\s.+?)?)?$",line.strip())
+        if purchase:
+            #Purchase. Format: {amount} (spent) on {object} (paid) (by|from|using) {payment method}
+            amountSpent = float(purchase.group(1).strip("£"))
+            spentOn = purchase.group(2).strip()
+            payMethod = "__default_payment"
+            if purchase.group(3) is not None:
+                payMethod = purchase.group(3).strip()
+            self.lines_to_process[index] = [amountSpent,payMethod,spentOn,self.date_time_stamp,dateNow,"scheduled_purchase"]
+        else:
+            transfer = re.search(r"^(£?\d+(?:.\d\d)?)(?:(?:\stransferred|\staken(?:\sout)?)?\sfrom\s(.+?))?(?:(?:\stransferred)?\sto\s(.+?))?(\staken\sout)?$",line.strip())
+            if transfer:
+                #Transfer. Format: {amount} (transferred|taken (out)) from {account} (transferred) to {target}
+                amountTransferred = float(transfer.group(1).strip("£"))
+                if transfer.group(2) is None and transfer.group(3) is None and transfer.group(4) is None:
+                    raise Exception("No valid format for the line '{}'".format(line))
+                outAccount = "__default_from_account"
+                inAccount = "__default_to_account"
+                if transfer.group(2) is not None:
+                    outAccount = transfer.group(2).strip()
+                if transfer.group(3) is not None:
+                    inAccount = transfer.group(3).strip()
+                self.lines_to_process[index] = [amountTransferred,outAccount,inAccount,self.date_time_stamp,dateNow,"scheduled_transfer"]
+            else:
+                raise Exception("No valid format for the line '{}'".format(line))
+
+
 ###
 # {amount} (spent) on {object} (paid) (by|from|using) {payment method}
 # {amount} (transferred) from {account} (transferred) to {target}
@@ -133,18 +236,29 @@ class ParsedFinanceFolder(object):
         self.odf_folder = odf.DocFolder(folder_name)
         self.payment_file = self.odf_folder.child_file("Payments")
         self.shortcut_file = self.odf_folder.child_file("Shortcuts")
+        self.schedule_file = self.odf_folder.child_file("Scheduled Payments")
         self.parsed_shortcut_file = InputShortcuts(self.shortcut_file)
         self.parsed_payment_file = InputPaymentData(self.payment_file,self.parsed_shortcut_file.dict)
+        self.parsed_schedule_file = InputScheduledData(self.schedule_file,self.parsed_shortcut_file.dict)
 
-    #Following code should, at some point, be deprecated
+    def update_schedule_file(self):
+        self.schedule_file.write_from_string(self.parsed_schedule_file.new_file_text)
 
     @property
     def read_payments(self):
         return self.parsed_payment_file.read_payments
 
     @property
+    def scheduled_payments(self):
+        return self.parsed_schedule_file.read_payments
+
+    @property
     def timestamp(self):
         return self.parsed_payment_file.timestamp
+
+    @property
+    def scheduled_timestamp(self):
+        return self.parsed_schedule_file.date_time_stamp
 
     @property
     def send_bool(self):
