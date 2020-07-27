@@ -190,6 +190,16 @@ class FinanceInfoObject():
         self.calculate_account_details()
         print(self.account_details)
 
+    @_dialogueCallable(dialogue_functions,str,pd.Timestamp,float)
+    def set_initial_balance(self,account,init_time,balance):
+        #remove any previous initial balances
+        self.all_payments.query("type != 'balance_init' or to != '{}'".format(account),inplace=True)
+        #get id time
+        id_time = datetime.datetime.now()
+        #add this initial balance
+        line = pd.DataFrame({"amount":balance,"from":"the void","to":account,"id_time":id_time,"date_made":init_time,"type":"balance_init"},index=[0.5])[["amount","from","to","id_time","date_made","type"]]
+        self.all_payments = self.all_payments.append(line, ignore_index=True).sort_index().reset_index(drop=True)
+
     @_dialogueCallable(dialogue_functions,str)
     def generate_report(self,key):
         if self.parsed_folder is None:
@@ -243,11 +253,14 @@ class FinanceInfoObject():
         self.parsed_folder.payment_file.write_from_string(get_clean_slate(self.additional_text))
 
     def calculate_account_details(self):
+        #account_details: all transfers "to"
         account_details = self.all_payments.copy()
         account_details.query("type != 'purchase'",inplace=True)
         account_details["from"] = account_details["to"]
+        #second_account_details: all transfers/payments "from"
         second_account_details = self.all_payments.copy()
         second_account_details["amount"] = -second_account_details["amount"]
+        second_account_details.query("type != 'balance_init'",inplace=True)
         account_details = pd.concat([account_details,second_account_details],ignore_index=True)
         account_details.drop(inplace=True,columns=["to","id_time","date_made","type"])
         account_details["amount"] = account_details.groupby(["from"])["amount"].transform("sum")
