@@ -47,6 +47,8 @@ class FinanceInfoObject():
         self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         for key in self.report_config:
             self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
+        #Working out account balances
+        self.calculate_account_details()
 
     @property
     def read_payments(self):
@@ -183,6 +185,11 @@ class FinanceInfoObject():
     def print_payment_row(self,index):
         print(self.all_payments.loc[[index]])
 
+    @_dialogueCallable(dialogue_functions)
+    def print_account_details(self):
+        self.calculate_account_details()
+        print(self.account_details)
+
     @_dialogueCallable(dialogue_functions,str)
     def generate_report(self,key):
         if self.parsed_folder is None:
@@ -197,16 +204,8 @@ class FinanceInfoObject():
         todayperiod = pd.Timestamp.now().to_period(freq)
         todayperiod -= offset
         transfers_in_period = self.all_payments.loc[self.all_payments.date_made.dt.to_period(freq) == todayperiod]
-        account_details = self.all_payments.copy()
-        account_details.query("type != 'purchase'",inplace=True)
-        account_details["from"] = account_details["to"]
-        second_account_details = self.all_payments.copy()
-        second_account_details["amount"] = -second_account_details["amount"]
-        account_details = pd.concat([account_details,second_account_details],ignore_index=True)
-        account_details.drop(inplace=True,columns=["to","id_time","date_made","type"])
-        account_details["amount"] = account_details.groupby(["from"])["amount"].transform("sum")
-        account_details = account_details.drop_duplicates(subset=["from"])
-        report = tex.TexReport(key,datetime.datetime.now(),info_dict={"raw_dataframe":transfers_in_period,"account_details":account_details})
+        self.calculate_account_details()
+        report = tex.TexReport(key,datetime.datetime.now(),info_dict={"raw_dataframe":transfers_in_period,"account_details":self.account_details})
         for item in self.report_config[key]:
             if item[0] == "section":
                 report.sections.append(tex.TexSection(item[1]))
@@ -242,6 +241,18 @@ class FinanceInfoObject():
     def clear_payments(self):
         time.sleep(1)
         self.parsed_folder.payment_file.write_from_string(get_clean_slate(self.additional_text))
+
+    def calculate_account_details(self):
+        account_details = self.all_payments.copy()
+        account_details.query("type != 'purchase'",inplace=True)
+        account_details["from"] = account_details["to"]
+        second_account_details = self.all_payments.copy()
+        second_account_details["amount"] = -second_account_details["amount"]
+        account_details = pd.concat([account_details,second_account_details],ignore_index=True)
+        account_details.drop(inplace=True,columns=["to","id_time","date_made","type"])
+        account_details["amount"] = account_details.groupby(["from"])["amount"].transform("sum")
+        account_details = account_details.drop_duplicates(subset=["from"])
+        self.account_details = account_details
 
     @classmethod
     def get_sorted_data(self,data,key,n):
