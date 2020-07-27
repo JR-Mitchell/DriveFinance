@@ -47,8 +47,6 @@ class FinanceInfoObject():
         self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         for key in self.report_config:
             self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
-        #Working out account balances
-        self.calculate_account_details()
 
     @property
     def read_payments(self):
@@ -142,6 +140,53 @@ class FinanceInfoObject():
         self.all_payments.loc[self.all_payments["from"] == "__default_payment",'from'] = self.config["__default_payment"]
         self.all_payments.loc[self.all_payments["from"] == "__default_from_account",'from'] = self.config["__default_from_account"]
         self.all_payments.loc[self.all_payments["to"] == "__default_to_account",'to'] = self.config["__default_to_account"]
+        print("Calculating account balances...")
+        #Working out account balances
+        #self.all_payments.query("type != 'balance_init' or to != 'cash'",inplace=True)
+        #self.print_payments()
+        self.calculate_account_details()
+        #Executing balance commands
+        for item in self.parsed_folder.init_args:
+            print("Setting initial balance of account '{}' to {}".format(item[0].strip(),item[1].strip()))
+            #initialise the account
+            init_time = datetime.datetime.now()
+            self.set_initial_balance(item[0].strip(),init_time,float(item[1].strip()))
+        #temp rename from to fro
+        self.all_payments.rename(columns={"from":"fro"},inplace=True)
+        #check commands
+        for item in self.parsed_folder.check_args:
+            account_name = item[0].strip()
+            expected_balance = float(item[1].strip())
+            current_balance = float(self.account_details[self.account_details["from"]==account_name].get("amount").tolist()[0])
+            discrepancy = round(current_balance - expected_balance,2)
+            if (discrepancy == 0):
+                print("Balance check for account '{}' came out with no discrepancy!".format(account_name))
+            else:
+                #find previous discrepancy
+                previous_discrepancy = 0
+                discrep_to = self.all_payments.query("type == 'discrepancy' and to == '{}'".format(account_name))
+                if not discrep_to.empty:
+                    previous_discrepancy = -discrep_to.get("amount").tolist()[0]
+                    self.all_payments.query("type != 'discrepancy' or to != '{}'".format(account_name),inplace=True)
+                discrep_from = self.all_payments.query("type == 'discrepancy' and fro == '{}'".format(account_name))
+                if not discrep_from.empty:
+                    previous_discrepancy = discrep_from.get("amount").tolist()[0]
+                    self.all_payments.query("type != 'discrepancy' or fro != '{}'".format(account_name),inplace=True)
+                #get id time
+                id_time = datetime.datetime.now()
+                total_discrepancy = round(discrepancy + previous_discrepancy,2)
+                if (total_discrepancy == 0):
+                    print("New discrepancy of account '{}' is 0. Clearing discrepancies.".format(account_name))
+                else:
+                    print("Setting current balance of account '{}' from {} to {} (total discrepancy {})".format(account_name,current_balance,expected_balance,total_discrepancy))
+                    line = False
+                    if (total_discrepancy < 0):
+                        line = pd.DataFrame({"amount":-total_discrepancy,"fro":"the void","to":account_name,"id_time":id_time,"date_made":id_time,"type":"discrepancy"},index=[0.5])[["amount","fro","to","id_time","date_made","type"]]
+                    else:
+                        line = pd.DataFrame({"amount":total_discrepancy,"fro":account_name,"to":"the void","id_time":id_time,"date_made":id_time,"type":"discrepancy"},index=[0.5])[["amount","fro","to","id_time","date_made","type"]]
+                    self.all_payments = self.all_payments.append(line, ignore_index=True).sort_index().reset_index(drop=True)
+            self.calculate_account_details()
+        self.all_payments.rename(columns={"fro":"from"},inplace=True)
         print("Saving payment data...")
         self.save_payments()
         if self.parsed_folder.send_bool:
@@ -150,6 +195,8 @@ class FinanceInfoObject():
         if self.parsed_folder.parsed_schedule_file.send_bool:
             print("Uploading updated schedule sheet...")
             self.parsed_folder.update_schedule_file()
+        print("Uploading cleared balance sheet...")
+        self.parsed_folder.clear_balance_file()
         print("Done!")
 
     @_dialogueCallable(dialogue_functions)
@@ -199,6 +246,7 @@ class FinanceInfoObject():
         #add this initial balance
         line = pd.DataFrame({"amount":balance,"from":"the void","to":account,"id_time":id_time,"date_made":init_time,"type":"balance_init"},index=[0.5])[["amount","from","to","id_time","date_made","type"]]
         self.all_payments = self.all_payments.append(line, ignore_index=True).sort_index().reset_index(drop=True)
+        self.calculate_account_details()
 
     @_dialogueCallable(dialogue_functions,str)
     def generate_report(self,key):

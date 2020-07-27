@@ -21,6 +21,22 @@ class InputFileReader(object):
     def __iter__(self):
         return iter(self.lines)
 
+class InputBalances(InputFileReader):
+    def __init__(self,child_file):
+        super(InputBalances,self).__init__(child_file)
+        self.init_args=[]
+        self.check_args=[]
+        for line in self.lines:
+            linesplit = line.split(":")
+            argsplit = linesplit[1].split(",")
+            if (linesplit[0].strip() == "init"):
+                self.init_args.append(argsplit)
+            elif (linesplit[0].strip() == "check"):
+                self.check_args.append(argsplit)
+            else:
+                raise Exception("Unknown balance input command: {}".format(linesplit[0].strip()))
+        self.default_text = "#Pattern 1: 'init:{account},{amount}' sets the initial balance of account to amount.\n#Pattern 2: 'check:{account},{amount}' checks if the current balance of account is amount and if not, makes a discrepancy transfer from/to the void."
+
 class InputShortcuts(InputFileReader):
     def __init__(self,child_file):
         super(InputShortcuts,self).__init__(child_file)
@@ -237,12 +253,25 @@ class ParsedFinanceFolder(object):
         self.payment_file = self.odf_folder.child_file("Payments")
         self.shortcut_file = self.odf_folder.child_file("Shortcuts")
         self.schedule_file = self.odf_folder.child_file("Scheduled Payments")
+        self.balance_file = self.odf_folder.child_file("Balances")
         self.parsed_shortcut_file = InputShortcuts(self.shortcut_file)
         self.parsed_payment_file = InputPaymentData(self.payment_file,self.parsed_shortcut_file.dict)
         self.parsed_schedule_file = InputScheduledData(self.schedule_file,self.parsed_shortcut_file.dict)
+        self.parsed_balance_file = InputBalances(self.balance_file)
 
     def update_schedule_file(self):
         self.schedule_file.write_from_string(self.parsed_schedule_file.new_file_text)
+
+    def clear_balance_file(self):
+        self.balance_file.write_from_string(self.parsed_balance_file.default_text)
+
+    @property
+    def init_args(self):
+        return self.parsed_balance_file.init_args
+
+    @property
+    def check_args(self):
+        return self.parsed_balance_file.check_args
 
     @property
     def read_payments(self):
