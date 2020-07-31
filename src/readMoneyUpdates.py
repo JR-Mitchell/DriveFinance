@@ -45,7 +45,7 @@ class FinanceInfoObject():
         for item in os.listdir("report_json/"):
             name = item[:-5]
             with open("report_json/{}".format(item),"r") as myFile:
-                self.config[name] = json.load(myFile)
+                self.report_config[name] = json.load(myFile)
 
     @property
     def read_payments(self):

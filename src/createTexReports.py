@@ -188,6 +188,7 @@ class TexReport():
         payments_raw["amount"] = payments_raw.groupby(["to"])["amount"].transform("sum")
         payments_raw = payments_raw.drop_duplicates(subset=["from"])
         if no_categories > 0:
+            #TODO - not yet fully implemented
             return payments_raw
         else:
             return payments_raw
