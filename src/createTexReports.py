@@ -166,16 +166,16 @@ class TexReport():
 
     @_reportCallable(report_functions,str,str)
     def generate_graphic(self,financeInfo,dataName,graphName):
-        name = dataName+"_"+graphName
-        name = name.replace("(","_").replace(")","_")
-        self.figure_names += [name]
         dataName = dataName.split("(")
         dataName,args = dataName[0],dataName[1]
         args = args.strip(")").split(",")
         if len(args) == 1 and args[0] == "":
             args = []
-        data = self.data_functions[dataName](self,financeInfo,*args)
-        fig.create_image(name,data,graphName)
+        name = dataName+"_"+"_".join(args)+"_"+graphName
+        if name not in self.figure_names:
+            self.figure_names.append(name)
+            data = self.data_functions[dataName](self,financeInfo,*args)
+            fig.create_image(name,data,graphName)
         return "\\includegraphics{}".format("{"+name+".png}")
 
     @_graphCallable(data_functions)
