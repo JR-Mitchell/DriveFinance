@@ -7,6 +7,7 @@ import src.createTexReports as tex
 import pandas as pd
 import re
 import time
+import json
 
 def get_clean_slate(additional_str):
     """
@@ -40,13 +41,11 @@ class FinanceInfoObject():
             configtxt = configFile.read()
         self.config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
         self.report_config = {}
-        configtxt = ""
         #Reading in report config
-        with open("report_config.ini","r") as configFile:
-            configtxt = configFile.read()
-        self.report_config = dict([item.split(":") for item in configtxt.split("\n") if len(item.split(":")) == 2])
-        for key in self.report_config:
-            self.report_config[key] = [item.split("=") for item in self.report_config[key].split(",")]
+        for item in os.listdir("report_json/"):
+            name = item[:-5]
+            with open("report_json/{}".format(item),"r") as myFile:
+                self.config[name] = json.load(myFile)
 
     @property
     def read_payments(self):
@@ -104,7 +103,7 @@ class FinanceInfoObject():
     def generate_default_reports(self):
         print("Generating default reports...")
         for key in self.report_config:
-            if ["autodo","1"] in self.report_config[key] and ["autodo","0"] not in self.report_config[key]:
+            if "autodo" in self.report_config[key] and self.report_config[key]["autodo"] == 1:
                 self.generate_report(key)
         print("Done!")
 
@@ -253,21 +252,24 @@ class FinanceInfoObject():
         if self.parsed_folder is None:
             self.parsed_folder = pff.ParsedFinanceFolder(self.folder_name)
         freq = None
-        for item in self.report_config[key]:
-            if item[0] == "frequency": freq=item[1]
-        assert freq is not None, "No frequency tag!"
+        errorstr = "No frequency tag for report {}".format(key)
+        assert "frequency" in self.report_config[key], errorstr
+        freq = self.report_config[key]["frequency"]
         offset = 0
-        for item in self.report_config[key]:
-            if item[0] == "offset": offset=int(item[1])
+        if "offset" in self.report_config[key]:
+            offset = self.report_config[key]["offset"]
         todayperiod = pd.Timestamp.now().to_period(freq)
         todayperiod -= offset
         transfers_in_period = self.all_payments.loc[self.all_payments.date_made.dt.to_period(freq) == todayperiod]
         self.calculate_account_details()
-        report = tex.TexReport(key,datetime.datetime.now(),info_dict={"raw_dataframe":transfers_in_period,"account_details":self.account_details})
-        for item in self.report_config[key]:
-            if item[0] == "section":
-                report.sections.append(tex.TexSection(item[1]))
-        report.generate_doctext()
+        header = None
+        with open("templates/latex_file.tex","r") as myFile:
+            header = myFile.read()
+        header = header.decode("utf8")
+        report = tex.TexReport(key,freq,offset,header=header)
+        for item in self.report_config[key]["sections"]:
+            report.add_section(item)
+        report.generate_doctext(self)
         report.produce_pdf("temptex")
         self.parsed_folder.odf_folder.save_pdf("tmp/temptex.pdf","{}.pdf".format(key))
         report.clear_tmp("temptex")
