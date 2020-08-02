@@ -154,7 +154,7 @@ class TexReport():
 
     @_reportCallable(report_functions)
     def current_balances(self,financeInfo):
-        return financeInfo.account_details.to_latex(index=False).replace(" 12:00:00","").replace(" 00:00:00","")
+        return financeInfo.account_details.to_latex(header=["Amount","Account"],index=False).replace(" 12:00:00","").replace(" 00:00:00","")
 
     def transfers_raw(self,financeInfo):
         transfers_raw = financeInfo.all_payments.loc[financeInfo.all_payments.date_made.dt.to_period(self.frequency) == self.time_period]
@@ -186,13 +186,17 @@ class TexReport():
     def item_breakdown_data(self,financeInfo,no_categories):
         payments_raw = self.purchases_raw(financeInfo)
         payments_raw["amount"] = payments_raw.groupby(["to"])["amount"].transform("sum")
-        payments_raw = payments_raw.drop_duplicates(subset=["from"])
-        if no_categories > 0:
-            #TODO - not yet fully implemented
-            return payments_raw
-        else:
-            return payments_raw
+        payments_raw = payments_raw.drop_duplicates(subset=["to"]).sort_values(by=['amount'],ascending=False)
+        payments_raw = payments_raw.loc[:,["amount","to"]]
+        if no_categories > 0 and no_categories < len(payments_raw.index):
+            part_one = payments_raw.iloc[range(no_categories)]
+            part_two = payments_raw.iloc[range(no_categories,len(payments_raw.index))]
+            part_two = part_two.agg("sum")
+            part_two["to"]="other"
+            part_one.append(part_two,ignore_index=True)
+            payments_raw = part_one
+        return payments_raw
 
     @_reportCallable(report_functions,int)
     def item_breakdown_table(self,financeInfo,no_categories):
-        return self.item_breakdown_data(financeInfo,no_categories).to_latex(header=["Amount","From","To","Date"],index=False).replace(" 12:00:00","").replace(" 00:00:00","")
+        return self.item_breakdown_data(financeInfo,no_categories).to_latex(header=["Amount","To"],index=False).replace(" 12:00:00","").replace(" 00:00:00","")
