@@ -114,6 +114,8 @@ Blank lines are ignored in processing, as is any text after a pound sign/hash (#
 Lines enclosed with square brackets are particular processing tags.
 These lines should never be deleted by the user, but may be added, for instance to update the date.
 
+#### Basic payments and transfers
+
 A generic payment takes the form:
 ```
 £(amount) spent on (item) paid by (account)
@@ -139,6 +141,8 @@ Note that it is good to be consistent with naming, as an input such as
 ```
 will lead to DriveFinance assuming "card" and "credit card" are two completely different, unrelated accounts.
 
+#### Payments with default accounts
+
 If a default payment account was set up during setup, a line formatted like
 ```
 £(amount) spent on (item)
@@ -155,6 +159,8 @@ Similarly, if default transfer accounts are set up, the following are available
 #Transfers "amount" from default sending account to default receiving account
 £(amount) taken out
 ```
+
+#### Getting the right date (the `[datenow]` tag)
 
 It may be necessary to update the date of payment/transfer.
 The processor will assume that any payment/transfer was made on the date of the last `[datenow]` tag encountered.
@@ -173,6 +179,8 @@ For example, with the five lines
 DriveFinance will interpret this as the £5 payment and £20 transfer having occurred on the 22nd of March 2019, and the £2.10 payment having occurred on the 27th of May 2020.
 Thus, if the last `[datenow]` tag is not the current date, you should add an updated `[datenow]` tag after the last payment/transfer before putting in any payments/transfers for a later date.
 
+#### The `[send]` tag
+
 Finally, the `[send]` tag should be added to confirm a group of payments/transfers, removing them from the drive doc and permanently storing them in the `.h5` database.
 The `[send]` tag will remove all lines above it (including any comments), generate a new timestamp, and leave all lines below undisrupted.
 For example, if the payment file reads
@@ -190,3 +198,8 @@ It will later read, after running `run.py` at 12:30,
 £20 transferred from card to Jeff
 ```
 and the removed payment will be stored in the database.
+
+Typically, it is fine to update the Payments file in offline mode on your mobile / other device at any time.
+However (particularly if you have scheduled the running of `run.py`), once a `[send]` tag has been added this safety is no longer guaranteed.
+The best practice is to never make any changes to the Payments file if it has a `[send]` tag present, and instead either run `run.py`, wait for it to run (if scheduled), or wait until you have the connection to receive an updated file.
+Changes to Payments once a `[send]` tag has been added may be wiped from the file without being processed.
