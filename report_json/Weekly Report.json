@@ -1,0 +1,44 @@
+{
+    "autodo": 1, 
+    "frequency": "W", 
+    "sections": [
+        [
+            "allPurchases", 
+            [
+                "all_purchases"
+            ]
+        ], 
+        [
+            "itemBreakdown", 
+            [
+                "item_breakdown_table", 
+                7
+            ], 
+            [
+                "generate_graphic", 
+                [
+                    "item_breakdown_data", 
+                    7
+                ], 
+                "pi_chart"
+            ]
+        ],
+        [
+            "accountDetails", 
+            [
+                "current_balances"
+            ], 
+            [
+                "transfers_table"
+            ], 
+            [
+                "generate_graphic", 
+                [
+                    "item_breakdown_data", 
+                    7
+                ], 
+                "pi_chart"
+            ]
+        ]
+    ]
+}

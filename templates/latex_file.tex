@@ -1,0 +1,43 @@
+\documentclass[12pt]{article}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{longtable}
+
+\newcommand{\allPurchases}[4]{
+\section{All Purchases}
+[vspacetxt]
+Purchases:
+Spent a total of £#1 on #2 different things.
+[vspacetxt]
+#3
+#4
+}
+
+\newcommand{\accountDetails}[3]{
+\section{Account Details}
+[vspacetxt]
+Current Balances:
+[vspacetxt]
+#1
+[vspacetxt]
+Account Transfers:
+[vspacetxt]
+#2
+[vspacetxt]
+#3
+}
+
+\newcommand{\groupedPurchases}[1]{
+\section{All Purchases}
+[vspacetxt]
+Total purchases:
+[vspacetxt]
+#1
+}
+
+\newcommand{\itemBreakdown}[2]{
+\section{Breakdown By Item}
+[vspacetxt]
+#1
+#2
+}
