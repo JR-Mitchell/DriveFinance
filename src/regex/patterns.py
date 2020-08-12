@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-PURCHASE = (r"^(?:spent\s)?(£?\d+(?:.\d\d)?)"
+PURCHASE = (r"^(?:spent\s)?((?:£)?\d+(?:.\d\d)?)"
     + r"(?:\sspent)?\son\s(.+?)"
     + r"(?:(?:\spaid)?\s(?:by|from|using)(\s.+?)?)?$")
     # (spent) {amount}
     # (spent) on {object}
     # paid (by|from|using) {account}
 
-TRANSFER = (r"^(£?\d+(?:.\d\d)?)"
+TRANSFER = (r"^((?:£)?\d+(?:.\d\d)?)"
     + r"(?:(?:\stransferred|\staken(?:\sout)?)?\sfrom/s(.+?))?"
     + r"(?:(?:\stransferred)?\sto\s(.+?))?(\staken\sout)?")
     # {amount}
@@ -22,3 +22,5 @@ DATELIST = [
     r":(\d\d)", #           ':mm'
     r":(\d\d)", #           ':ss'
     r"\.?(\d\d\d\d\d\d)"] #  '.uuuuuu'
+
+CASH_AMOUNT = r"^((?:£)?\d+(?:.\d\d)?)$"
