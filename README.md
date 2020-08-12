@@ -35,31 +35,6 @@ $ cd DriveFinance
 $ pip install -r requirements.txt
 ```
 
-Alternatively, install Python dependencies with a virtual environment:
-
-```sh
-# Navigate into cloned repository
-$ cd DriveFinance
-# Create the virtual environment
-$ python -m venv venv
-# Activate the virtual environment
-$ source venv/bin/activate
-# Install requirements
-$ pip install -r requirements.txt
-```
-
-Note that, if using a virtual environment, one should activate the environment before running the program using the command
-
-```sh
-$ source venv/bin/activate
-```
-
-and exit the environment once done with it using the command
-
-```sh
-$ deactivate
-```
-
 ### Initial Setup
 
 Access to Google's drive api requires the user to enable the Drive API and generate a `credentials.json` and `token.json`.
