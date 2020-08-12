@@ -17,13 +17,16 @@ if __name__ == "__main__":
     parser.add_argument('-nr','--noreport',action='store_const',const=True,help='override default behaviour, preventing generation of default reports')
     parser.add_argument('-ni','--noinput',action='store_const',const=True,help='override default behaviour to prevent the reading of drive input files')
     parser.add_argument('-r','--report',help='generates report with name REPORT')
+    parser.add_argument('-f','--foldername',help='use non-default drive folder FOLDERNAME')
     args = vars(parser.parse_args())
     args = {item:args[item] for item in args if args[item] is not None}
 
+    if "foldername" in args:
+        finance_data = fdat.FinanceData(args["foldername"])
+    else:
+        finance_data = fdat.FinanceData()
     if "setup" in args:
         setup.default_setup_flow()
-
-    finance_data = fdat.FinanceData("JR Finances")
     if "defaults" in args:
         print("Argument '--defaults' not yet implemented.")
         parser.print_help()

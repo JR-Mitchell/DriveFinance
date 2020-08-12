@@ -10,10 +10,28 @@ class FinanceData(object):
     """ Object for general processing of finances through various utility
     methods and properties.
 
-    :param folder_name: the name of the folder holding finance info
-    :type folder_name: str
+    :param folder_name: the name of the folder holding finance info,
+        defaults to None (in which case "__default_folder_name" from config.ini
+        is used)
+    :type folder_name: str, optional
     """
-    def __init__(self,folder_name):
+    def __init__(self,folder_name=None):
+        #Read in the config
+        with open("config.ini","r") as configfile:
+            config_txt = configfile.read()
+        self.config = dict([
+            item.split(":")
+            for item in config_txt.split("\n")
+            if len(item.split(":")) == 2])
+        #Get folder name
+        if folder_name is None:
+            if "__default_folder_name" in self.config:
+                folder_name = self.config["__default_folder_name"]
+            else:
+                errorcode = ("Unable to find a default folder name!"
+                    + " Have you set up using the --setup argument"
+                    + " or modified config.ini?")
+                raise Exception(errorcode)
         self.folder_name = folder_name
         self.drive_folder = None
         self.raw_files = {}
@@ -23,13 +41,6 @@ class FinanceData(object):
         self.payment_db = None
         if os.path.isfile(db_path):
             self.payment_db = pd.read_hdf(db_path)
-        #Read in the config
-        with open("config.ini","r") as configfile:
-            config_txt = configfile.read()
-        self.config = dict([
-            item.split(":")
-            for item in config_txt.split("\n")
-            if len(item.split(":")) == 2])
         #Read in report config
         self.report_config = {}
         for item in os.listdir("report_json/"):
