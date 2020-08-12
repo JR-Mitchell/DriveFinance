@@ -1,6 +1,7 @@
 import config
 import basicinput as input
 import src.gdrive.drivefolder as odf
+import os
 
 def default_setup_flow(foldername=None):
     """ Interactive setup for the user.
@@ -36,9 +37,14 @@ def default_setup_flow(foldername=None):
     #Generate missing drive files &/ folders
     for item in ["Shortcuts","Balances","Payments","Scheduled"]:
         if item not in drive_folder.subitem_dict:
+            #TODO
             assert False, "Not yet implemented!"
-    #Create missing files &/ folders in the drive
     #Create missing subdirectories and files on machine
+    dirlist = os.listdir(os.getcwd())
+    for folder_name in ["databases","templates","report_json"]:
+        if folder_name not in dirlist:
+            print("Creating '{}' folder".format(folder_name))
+            os.mkdir(folder_name)
     #Opt: modify defaults
     if not config_already_done:
         print("Do you wish to modify the values in config.ini? (y/N)")
