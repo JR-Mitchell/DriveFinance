@@ -1,6 +1,7 @@
 #-*- encoding: utf-8 -*-
 import src.regex.patterns as patterns
 import re
+import pandas as pd
 
 RESERVED_CHARACTERS = [
     ':','"','%','*',
@@ -53,3 +54,37 @@ def money_input():
         code = raw_input().strip()
     return float(code.strip("£"))
 
+def frequency_input():
+    """ Prompts the user to input text denoting a pandas frequency string
+
+    :returns: the frequency string
+    :rtype: str
+    """
+    code = raw_input().strip()
+    while True:
+        try:
+            pd.Period(freq=code)
+            break
+        except ValueError:
+            print("Please put in a valid pandas frequency string.")
+            print("See relevant documentation at:")
+            print("https://pandas.pydata.org/pandas-docs/stable/user_guide/"
+                + "timeseries.html#offset-aliases")
+            code = raw_input().strip()
+    return code
+
+def int_input():
+    """ Prompts the user to input text denoting an integer
+
+    :returns: the integer denoted
+    :rtype: int
+    """
+    code = raw_input().strip()
+    while True:
+        try:
+            value = int(code)
+            break
+        except ValueError:
+            print("Please input a valid integer (whole number).")
+            code = raw_input().strip()
+    return value

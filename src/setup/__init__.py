@@ -58,7 +58,8 @@ def default_setup_flow(foldername=None):
     if finance_init:
         finance_data = fdat.FinanceData(foldername)
         while(finance_init):
-            print("Which account would you like to set the initial balance for?")
+            print("Which account would you like to set the"
+                + " initial balance for?")
             account_name = input.text_input()
             print("What is the initial balance for '{}'".format(account_name))
             balance = input.money_input()
@@ -79,7 +80,7 @@ def default_setup_flow(foldername=None):
         #TODO
         assert False, "Not yet implemented!"
     #Opt: initialise report(s)
-    print("Do you want to set up a report? (y/N)")
+    print("Do you want to create/modify/clone a report? (y/N)")
     report_init = input.yes_no_input()
     while report_init:
         reports.report_setup_flow()
