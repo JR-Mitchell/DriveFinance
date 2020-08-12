@@ -6,7 +6,7 @@
 #   -t --tamper: allows access to data in order to make changes
 #   -d --defaults: provides config.ini with the default config options
 
-import src.readMoneyUpdates as rmu
+import src.financedata as fdat
 
 if __name__ == "__main__":
     import argparse
@@ -18,14 +18,14 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     args = [item for item in args if args[item]]
 
-    myFolder = rmu.FinanceInfoObject("JR Finances")
+    my_folder = fdat.FinanceData("JR Finances")
     if "defaults" in args:
         print("Argument '--defaults' not yet implemented.")
         parser.print_help()
     if "noinput" not in args:
-        myFolder.read_drive_files()
+        my_folder.read_drive_files()
     if "noreport" not in args:
-        myFolder.generate_default_reports()
+        my_folder.generate_default_reports()
     if "tamper" in args:
-        myFolder.open_dialogue()
+        my_folder.open_dialogue()
     print("All commands processed. Thank you for running!")

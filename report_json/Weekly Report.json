@@ -15,12 +15,16 @@
                 7
             ], 
             [
-                "generate_graphic", 
+                "generate_figure", 
                 [
-                    "item_breakdown_data", 
+                    "item_breakdown_raw", 
                     7
                 ], 
-                "pi_chart"
+                [
+                    "pi_chart", 
+                    "to", 
+                    "amount"
+                ]
             ]
         ],
         [
@@ -32,12 +36,16 @@
                 "transfers_table"
             ], 
             [
-                "generate_graphic", 
+                "generate_figure", 
                 [
-                    "item_breakdown_data", 
+                    "item_breakdown_raw", 
                     7
                 ], 
-                "pi_chart"
+                [
+                    "pi_chart", 
+                    "to", 
+                    "amount"
+                ]
             ]
         ]
     ]
