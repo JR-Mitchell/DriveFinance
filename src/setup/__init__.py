@@ -1,7 +1,9 @@
 import config
 import basicinput as input
+import reports
 import src.gdrive.drivefolder as odf
-import os
+import src.financedata as fdat
+import os, datetime
 
 def default_setup_flow(foldername=None):
     """ Interactive setup for the user.
@@ -51,5 +53,35 @@ def default_setup_flow(foldername=None):
         if input.yes_no_input():
             config.config_setup_flow(config_dict)
     #Opt: initialise financial account(s)
+    print("Do you wish to initialise a financial account? (y/N)")
+    finance_init = input.yes_no_input()
+    if finance_init:
+        finance_data = fdat.FinanceData(foldername)
+        while(finance_init):
+            print("Which account would you like to set the initial balance for?")
+            account_name = input.text_input()
+            print("What is the initial balance for '{}'".format(account_name))
+            balance = input.money_input()
+            init_time = datetime.datetime.now()
+            finance_data.set_initial_balance(
+                account_name,
+                balance,
+                init_time)
+            print("Set initial balance of '{}' to {}".format(
+                account_name,
+                balance))
+            print("Do you wish to initialise another financial account? (y/N)")
+            finance_init = input.yes_no_input()
     #Opt: initialise shortcut(s)
+    print("Do you want to set up payment shortcuts? (y/N)")
+    shortcut_init = input.yes_no_input()
+    if shortcut_init:
+        #TODO
+        assert False, "Not yet implemented!"
     #Opt: initialise report(s)
+    print("Do you want to set up a report? (y/N)")
+    report_init = input.yes_no_input()
+    while report_init:
+        reports.report_setup_flow()
+        print("Do you want to set up another report? (y/N)")
+        report_init = input.yes_no_input()

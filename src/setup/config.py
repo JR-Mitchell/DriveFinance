@@ -6,11 +6,6 @@ def config_setup_flow(config_dict):
     :param config_dict: the config dictionary
     :type config_dict: dict
     """
-    reserved_characters = [
-        ':','"','%','*',
-        '(',')','{','}',
-        '[',']','@','\'',
-        '#','\\','|','.','/']
     mod_folder_bool = False
     if "__default_folder_name" in config_dict:
         print("Modify default folder name? (y/N)")

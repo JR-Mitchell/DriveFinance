@@ -1,3 +1,7 @@
+#-*- encoding: utf-8 -*-
+import src.regex.patterns as patterns
+import re
+
 RESERVED_CHARACTERS = [
     ':','"','%','*',
     '(',')','{','}',
@@ -36,3 +40,16 @@ def text_input():
         print(RESERVED_CHARACTERS)
         code = raw_input().strip()
     return code
+
+def money_input():
+    """ Prompts the user to input text denoting an amount of money
+
+    :returns: the amount of money
+    :rtype: float
+    """
+    code = raw_input().strip()
+    while not(re.match(patterns.CASH_AMOUNT,code)):
+        print("Please put in a valid amount of money (e.g '£15' or '103.32')")
+        code = raw_input().strip()
+    return float(code.strip("£"))
+
