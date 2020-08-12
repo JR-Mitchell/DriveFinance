@@ -1,8 +1,8 @@
-import src.doc.docobject as obj
-import src.doc.docfile as file
+import src.gdrive.docobject as obj
+import src.gdrive.docfile as file
 import googleapiclient.http as media
 
-class DocFolder(obj.DocObject):
+class DriveFolder(obj.DocObject):
     """ A class wrapping drive functionality to allow the easy saving &
     loading of particular files all stored with a particular folder in
     the user's Google Drive.
@@ -15,7 +15,7 @@ class DocFolder(obj.DocObject):
     def __init__(self,folder_name):
         """ Constructor method
         """
-        super(DocFolder,self).__init__()
+        super(DriveFolder,self).__init__()
         self.folder_name = folder_name
         #List of all items with this name
         folder_results = self.get_all_results(
@@ -57,7 +57,7 @@ class DocFolder(obj.DocObject):
         :type filename: str
 
         :returns: A ChildDocFile of the given filename
-        :rtype: class:`src.doc.docfolder.ChildDocFile`
+        :rtype: class:`src.gdrive.drivefolder.ChildDocFile`
         """
         return ChildDocFile(self,filename)
 
@@ -93,10 +93,10 @@ class DocFolder(obj.DocObject):
         return self.subitem_dict[key]
 
 class ChildDocFile(file.DocFile):
-    """ Extension of DocFile for a file inside a given docfolder
+    """ Extension of DocFile for a file inside a given DriveFolder
 
-    :param parent: the DocFolder within which this file exists
-    :type parent: class:`src.doc.docfolder.DocFolder`
+    :param parent: the DriveFolder within which this file exists
+    :type parent: class:`src.gdrive.drivefolder.DriveFolder`
     :param filename: the name of the file
     :type filename: str
     """

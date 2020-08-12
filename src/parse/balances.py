@@ -6,7 +6,7 @@ class ParsedBalances(filereader.InputFileReader):
     """ Object for parsing the Balances file
 
     :param child_file: The DocFile (or ChildDocFile) to read
-    :type child_file: class: `src.doc.docfile.DocFile`
+    :type child_file: class: `src.gdrive.docfile.DocFile`
 
     :raises Exception: If the file features an unknown command
     """

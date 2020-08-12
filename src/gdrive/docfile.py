@@ -1,4 +1,4 @@
-import src.doc.docobject as obj
+import src.gdrive.docobject as obj
 import StringIO
 import googleapiclient.http as media
 

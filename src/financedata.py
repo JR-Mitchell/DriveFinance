@@ -2,7 +2,7 @@
 
 import pandas as pd
 import src.parse as parse
-import src.doc.docfolder as odf
+import src.gdrive.drivefolder as odf
 import src.reports as reports
 import os, json, datetime, time
 
@@ -56,7 +56,7 @@ class FinanceData(object):
         """ Reads in all up-to-date information from the user's Google Drive
         """
         print("Reading files from drive...")
-        self.drive_folder = odf.DocFolder(self.folder_name)
+        self.drive_folder = odf.DriveFolder(self.folder_name)
         for key in ["Shortcuts","Balances"]:
             self.raw_files[key] = self.drive_folder.child_file(key)
             self.parsed_files[key] = parse.autoparse(key,self.raw_files[key])

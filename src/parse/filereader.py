@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import src.doc.docfolder as odf
+import src.gdrive.drivefolder as odf
 
 class InputFileReader(object):
     """ General file for parsing a doc file as a series of lower case lines,
     ignoring blank lines and comments past #
 
     :param child_file: The DocFile (or ChildDocFile) to read
-    :type child_file: class: `src.doc.docfile.DocFile`
+    :type child_file: class: `src.gdrive.docfile.DocFile`
     """
     def __init__(self,child_file):
         """Constructor method

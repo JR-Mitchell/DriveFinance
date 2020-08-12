@@ -10,7 +10,7 @@ class ParsedPayments(filereader.InputFileReader):
     """ Object for parsing the Payments file
 
     :param child_file: the DocFile (or ChildDocFile) to read
-    :type child_file: class: `src.doc.docfile.DocFile`
+    :type child_file: class: `src.gdrive.docfile.DocFile`
     :param replacement_dict: dictionary of command shortcuts
     :type replacement_dict: dict
     """
