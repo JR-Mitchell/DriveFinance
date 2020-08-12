@@ -21,12 +21,15 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     args = {item:args[item] for item in args if args[item] is not None}
 
+    if "setup" in args:
+        if "foldername" in args:
+            setup.default_setup_flow(args["foldername"])
+        else:
+            setup.default_setup_flow()
     if "foldername" in args:
         finance_data = fdat.FinanceData(args["foldername"])
     else:
         finance_data = fdat.FinanceData()
-    if "setup" in args:
-        setup.default_setup_flow()
     if "defaults" in args:
         print("Argument '--defaults' not yet implemented.")
         parser.print_help()
