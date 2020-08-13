@@ -6,7 +6,7 @@ def report_setup_flow():
     """
     report_names = [item[:-5] for item in os.listdir("report_json/")]
     print("\nReport Setup\n============\n")
-    print("You may create, clone or modify a report,
+    print("You may create, clone or modify a report,"
         + " or cancel out of this dialogue.")
     dokey = ""
     modify_name = None
