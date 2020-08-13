@@ -1,10 +1,7 @@
 import googleapiclient.discovery as discovery
 import httplib2 as http
 from oauth2client import file, client, tools
-import pytz
 
-BST = pytz.timezone('Europe/London')
-UTC = pytz.utc
 SCOPES = 'https://www.googleapis.com/auth/drive'
 
 class DocObject(object):
