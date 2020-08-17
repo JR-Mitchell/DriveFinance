@@ -5,6 +5,7 @@ import src.parse as parse
 import src.gdrive.drivefolder as odf
 import src.reports as reports
 import os, json, datetime, time
+import src.interface as interface
 
 class FinanceData(object):
     """ Object for general processing of finances through various utility
@@ -341,7 +342,8 @@ class FinanceData(object):
         print("Done generating default reports!")
 
     def open_dialogue(self):
-        print("--tinker command not yet implemented!")
+        tinker = interface.tinker.TinkerObject(self)
+        tinker.run()
 
     #Convenience property stuff
     def _parsed_property(self,key):

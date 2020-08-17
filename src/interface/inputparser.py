@@ -2,7 +2,7 @@ class BaseParser(object):
     """ Abstract class for object with functions safely callable at runtime
 
     :param offset:
-    :type offset:
+    :type offset: int
     """
     def __init__(self,offset):
         self._parser_offset = offset

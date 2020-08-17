@@ -12,18 +12,23 @@ class InteractivePrompt(inputparser.BaseParser):
     :type header_text: str
     :param function_dict: dictionary holding all functions that may be called
     :type function_dict: dict
+    :param offset:
+    :type offset: int
     :param protected_key: a key that under no circumstances should the user
         press, which is inserted before every macro to turn protected mode on
         to ensure macro infinite loops don't occur,
         defaults to "\n"
     :type protected_key: str, Optional
     """
-    def __init__(self,header_text,function_dict,protected_key="\n"):
+    def __init__(self,header_text,function_dict,offset,protected_key="\n"):
         """ Constructor method
         """
+        super(InteractivePrompt,self).__init__(offset)
         self._protected_key = protected_key
         self.header_text = header_text
         self._function_dict = function_dict
+        self._function_dict["ls"] = self.ls
+        self._function_dict["exit"] = self.exit
         self._bound_keys = {}
         readline.parse_and_bind('"{}": complete'.format(protected_key))
         #Use readline's complete functionality to safely input functions
@@ -42,6 +47,10 @@ class InteractivePrompt(inputparser.BaseParser):
     def run(self):
         """ Runs the interactive prompt until self.close == True
         """
+        print(colorama.Back.GREEN
+            + colorama.Fore.BLACK
+            + self.header_text
+            + colorama.Style.RESET_ALL)
         while not self.close:
             try:
                 self._run_once()
@@ -57,8 +66,8 @@ class InteractivePrompt(inputparser.BaseParser):
         self.protected_mode_off()
         command = raw_input()
         for key in self._function_dict:
-            if " "+key in command:
-                self._function_dict[key](self)
+            if " "+key in command or command[:len(key)] == key:
+                self._function_dict[key]()
                 return
         self.no_command_return(command)
 
@@ -127,3 +136,16 @@ class InteractivePrompt(inputparser.BaseParser):
             + colorama.Fore.BLACK
             + self.header_text
             + colorama.Style.RESET_ALL)
+
+    #For adding to func dict
+    def exit(self):
+        """ Exits the dialogue
+        """
+        self.close = True
+
+    def ls(self):
+        """ Lists all available functions
+        """
+        for key in self._function_dict:
+            if key[0] != "_":
+                print key+"\t",
