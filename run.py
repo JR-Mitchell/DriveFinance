@@ -1,24 +1,40 @@
 # -*- coding: utf-8 -*-
 
-##When run without args this calls the default reading in - report out protocol as configured
-##When run with args:
-#   -h --help: shows help info
-#   -t --tinker: allows access to data in order to make changes
-#   -d --defaults: provides config.ini with the default config options
-
 import src.financedata as fdat
 import src.setup as setup
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t','--tinker',action='store_const',const=True,help='open a UI for modifying stored financial data')
-    parser.add_argument('-s','--setup',action='store_const',const=True,help='perform initial setup, and/or initialise accounts, create reports etc.')
+    parser.add_argument(
+        "-t", "--tinker",
+        action = "store_const", const = True,
+        help = ("open a UI for calling commands,"
+            + " allowing modification of stored financial data"))
+    parser.add_argument(
+        "-s", "--setup",
+        action = "store_const", const = True,
+        help=("run setup flow, performing initial setup and/or"
+            + " modifying config, initialising accounts,"
+            + " initialising shortcuts and "
+            + "creating, modifying or cloning reports"))
     mutual_group = parser.add_mutually_exclusive_group()
-    mutual_group.add_argument('-nr','--noreport',action='store_const',const=True,help='override default behaviour, preventing generation of default reports')
-    parser.add_argument('-ni','--noinput',action='store_const',const=True,help='override default behaviour to prevent the reading of drive input files')
-    mutual_group.add_argument('-r','--report',help='generates report with name REPORT')
-    parser.add_argument('-f','--foldername',help='use non-default drive folder FOLDERNAME')
+    mutual_group.add_argument(
+        "-nr", "--noreport",
+        action = "store_const", const = True,
+        help=("suppress generation of default reports."
+            + " cannot be used with -r/--report"))
+    parser.add_argument(
+        "-ni", "--noinput",
+        action = "store_const", const = True,
+        help="suppress the reading of drive input files")
+    mutual_group.add_argument(
+        "-r", "--report",
+        help = ("generate and upload report with name REPORT."
+            + " cannot be used with -nr/--noreport"))
+    parser.add_argument(
+        "-f", "--foldername",
+        help = "run with non-default drive folder FOLDERNAME")
     args = vars(parser.parse_args())
     args = {item:args[item] for item in args if args[item] is not None}
 
