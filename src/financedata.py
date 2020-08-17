@@ -340,6 +340,9 @@ class FinanceData(object):
                 self.generate_report(key)
         print("Done generating default reports!")
 
+    def open_dialogue(self):
+        print("--tinker command not yet implemented!")
+
     #Convenience property stuff
     def _parsed_property(self,key):
         """ Convenience function for properties giving parsed files

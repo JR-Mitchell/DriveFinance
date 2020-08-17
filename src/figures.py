@@ -6,10 +6,10 @@ plt.ioff()
 import matplotlib.dates as mdates
 import numpy as np
 from datetime import timedelta
-import src.inputparser as inputparser
+import src.interface as interface
 import pandas as pd
 
-class Figure(inputparser.BaseParser):
+class Figure(interface.BaseParser):
     figure_funcs = {}
     data_funcs = {}
     """ Object for creation of a figure for use in a LaTeX report
@@ -116,19 +116,19 @@ class Figure(inputparser.BaseParser):
 
     #Data access methods
     #TODO write docstrings
-    @inputparser.BaseParser._parseMethod(data_funcs)
+    @interface.BaseParser._parseMethod(data_funcs)
     def purchases_raw(self,finance_data):
         return finance_data.subdf_purchases(self.frequency,self.period)
 
-    @inputparser.BaseParser._parseMethod(data_funcs)
+    @interface.BaseParser._parseMethod(data_funcs)
     def balances_raw(self,finance_data):
         return finance_data.account_balances
 
-    @inputparser.BaseParser._parseMethod(data_funcs)
+    @interface.BaseParser._parseMethod(data_funcs)
     def transfers_raw(self,finance_data):
         return finance_data.subdf_transfers(self.frequency,self.period)
 
-    @inputparser.BaseParser._parseMethod(data_funcs,int)
+    @interface.BaseParser._parseMethod(data_funcs,int)
     def item_breakdown_raw(self,finance_data,no_categories=0):
         return finance_data.subdf_item_breakdown(
             self.frequency,
@@ -136,7 +136,7 @@ class Figure(inputparser.BaseParser):
             no_categories)
 
     #Graph creation methods
-    @inputparser.BaseParser._parseMethod(figure_funcs,str,str)
+    @interface.BaseParser._parseMethod(figure_funcs,str,str)
     def pi_chart(self,ax,group_label,val_label):
         """ Creates a pi chart from self._graph_data given the category column
         label and value column labels
@@ -159,7 +159,7 @@ class Figure(inputparser.BaseParser):
         labels = new_data[group_label].tolist()
         ax.pie(amounts,labels=labels)
 
-    @inputparser.BaseParser._parseMethod(figure_funcs,str)
+    @interface.BaseParser._parseMethod(figure_funcs,str)
     def time_bar_chart(self,ax,group_label):
         errorcode = ("FigureError: tried to generate a time bar chart"
             + " with no date_made column")

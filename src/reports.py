@@ -1,10 +1,10 @@
-import src.inputparser as inputparser
+import src.interface as interface
 import pandas as pd
 import subprocess as sub
 import figures as fig
 import os
 
-class TexReport(inputparser.BaseParser):
+class TexReport(interface.BaseParser):
     report_funcs = {}
     """ Object for creation of a LaTeX report
 
@@ -213,7 +213,7 @@ class TexReport(inputparser.BaseParser):
             cleanup_process.wait()
 
     #Functions that may be included in a report json
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def all_purchases(self,finance_data):
         """ Convenience function for default \allPurchases LaTeX section
 
@@ -242,7 +242,7 @@ class TexReport(inputparser.BaseParser):
                 "purchases_raw()",
                 "time_bar_chart(to)")]
 
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def purchases_total(self,finance_data):
         """ Returns the total amount spent on purchases in the time period
 
@@ -257,7 +257,7 @@ class TexReport(inputparser.BaseParser):
             self.time_period)
         return str(list(purchases_raw.agg('sum'))[0])
 
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def purchases_table(self,finance_data):
         """ Returns a table of all purchases in this period
 
@@ -275,7 +275,7 @@ class TexReport(inputparser.BaseParser):
                 index = False)
         return self._table_cleanup(latex_table)
 
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def purchases_count(self,finance_data):
         """ Returns the total number of purchases made in the time period
 
@@ -290,7 +290,7 @@ class TexReport(inputparser.BaseParser):
             self.time_period)
         return str(len(purchases_raw.index))
 
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def current_balances(self,finance_data):
         """ Returns a table of up-to-date account balances
 
@@ -305,7 +305,7 @@ class TexReport(inputparser.BaseParser):
             index=False)
         return self._table_cleanup(latex_table)
 
-    @inputparser.BaseParser._parseMethod(report_funcs)
+    @interface.BaseParser._parseMethod(report_funcs)
     def transfers_table(self,finance_data):
         """ Returns a table of all transfers in this period
 
@@ -323,7 +323,7 @@ class TexReport(inputparser.BaseParser):
                 index = False)
         return self._table_cleanup(latex_table)
 
-    @inputparser.BaseParser._parseMethod(report_funcs,str,str)
+    @interface.BaseParser._parseMethod(report_funcs,str,str)
     def generate_figure(self,finance_data,data_name,graph_name):
         """ Creates a figure of specific data and graph type,
             returning LaTeX code to include this figure
@@ -359,7 +359,7 @@ class TexReport(inputparser.BaseParser):
             graph.save_graph_png(graph_name,*graph_args)
         return "\\includegraphics{}".format("{"+name+".png}")
 
-    @inputparser.BaseParser._parseMethod(report_funcs,int)
+    @interface.BaseParser._parseMethod(report_funcs,int)
     def item_breakdown_table(self,finance_data,no_categories):
         """ Returns a table of payments in this period
         broken down by category spent on
