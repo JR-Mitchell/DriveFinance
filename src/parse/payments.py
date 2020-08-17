@@ -126,7 +126,8 @@ class ParsedPayments(filereader.InputFileReader):
                     + timelock["last_calc_time"]))
         elif line == "[send]":
             self.send_bool = True
-            datenowtxt = timelock["datenow"].strftime("%d/%m/%y")
+            datenowtime = pd.Timestamp(**dict(timelock["datenow"]))
+            datenowtxt = datenowtime.strftime("%d/%m/%y")
             self.additional_text += "[datenow: {}]\n".format(datenowtxt)
         else:
             errorcode = "Control tag '{}' not recognised in Payments"
@@ -190,6 +191,7 @@ class ParsedPayments(filereader.InputFileReader):
         :returns: the text for a clean payment sheet
         :rtype: str
         """
+        now = datetime.datetime.now()
         last_date = now.strftime("%d/%m/%y")
         if "[datenow: " in self.additional_text:
             remaining_time_text = self.additional_text
