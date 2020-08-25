@@ -36,11 +36,6 @@ def default_setup_flow(foldername=None):
         foldername = config_dict["__default_folder_name"]
     #Create an auth token
     drive_folder = odf.DriveFolder(foldername)
-    #Generate missing drive files &/ folders
-    for item in ["Shortcuts","Balances","Payments","Scheduled"]:
-        if item not in drive_folder.subitem_dict:
-            #TODO
-            assert False, "Not yet implemented!"
     #Create missing subdirectories and files on machine
     dirlist = os.listdir(os.getcwd())
     for folder_name in ["databases","templates","report_json"]:

@@ -28,14 +28,32 @@ class DriveFolder(obj.DocObject):
             for item in folder_results
             if item['capabilities']['canListChildren']]
         if len(folder_ids) == 0:
-            errorcode = "No folders with the name {} found.".format(foldername)
-            raise Exception(errorcode)
+            #Create a folder
+            metadata = {
+                'name': folder_name,
+                'mimeType': 'application/vnd.google-apps.folder'
+            }
+            file = drive_service.files().create(
+                body = metadata,
+                fields = 'id').execute()
+            folder_ids.append(file.get('id'))
         elif len(folder_ids) > 1:
             errorcode = "Multiple folders with the name {} found."
             errorcode = errorcode.format(folder_name)
             raise Exception(errorcode)
         self.folder_id = folder_ids[0]
         self.refresh_dict()
+        for item in ["Shortcuts","Balances","Payments","Scheduled"]:
+            if item not in self.subitem_dict:
+                metadata={
+                    "name": item,
+                    "parents": [self.folder_id],
+                    "mimeType": "application/vnd.google-apps.document"
+                }
+                file = self.service.files().create(
+                    body = metadata,
+                    fields = 'id').execute()
+                self.subitem_dict[item] = file.get('id')
 
     def refresh_dict(self):
         """ Provides internal dictionary with names and IDs of
