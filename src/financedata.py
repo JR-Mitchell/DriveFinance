@@ -312,6 +312,10 @@ class FinanceData(object):
         :param report_name: the name of the report
         :type report_name: str
         """
+        if self.drive_folder == None:
+            print("Accessing drive API in order to upload PDF...")
+            print("(Don't worry, this won't read in file changes)")
+            self.drive_folder = odf.DriveFolder(self.folder_name)
         errorcode = "No frequency tag found in report {}".format(report_name)
         assert "frequency" in self.report_config[report_name], errorcode
         freq = self.report_config[report_name]["frequency"]
