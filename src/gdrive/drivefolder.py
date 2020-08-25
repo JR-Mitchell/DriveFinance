@@ -75,14 +75,20 @@ class DriveFolder(obj.DocObject):
                 tfid = self.subitem_dict[key]
                 break
         if tfid is None:
-            errorcode = "No pdf of name {} found in folder {}".format(
-                name_in_drive,
-                self.folder_name)
-            raise Exception(errorcode)
-        media_body = media.MediaFileUpload(name_on_disk,resumable=True)
-        self.service.files().update(
-            fileId = tfid,
-            media_body = media_body).execute()
+            media_body = media.MediaFileUpload(name_on_disk,resumable=True,mimetype="application/pdf")
+            metadata={
+                "name": name_in_drive,
+                "parents": [self.folder_id]
+            }
+            self.service.files().create(
+                body = metadata,
+                media_body = media_body).execute()
+            self.refresh_dict()
+        else:
+            media_body = media.MediaFileUpload(name_on_disk,resumable=True)
+            self.service.files().update(
+                fileId = tfid,
+                media_body = media_body).execute()
 
     def __getitem__(self,key):
         """ Returns a file ID from internal dictionary
