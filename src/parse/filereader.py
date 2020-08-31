@@ -25,7 +25,7 @@ class InputFileReader(object):
         :return: The line at given index
         :rtype: str
         """
-        return self.lines[arg]
+        return self._lines[arg]
 
     def __iter__(self):
-        return iter(self.lines)
+        return iter(self._lines)
