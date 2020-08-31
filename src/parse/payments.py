@@ -70,7 +70,7 @@ class ParsedPayments(filereader.InputFileReader):
 
         :raises Exception: Exception if regex match fails
 
-        :return: a list of pairs (key,value) for date/time/whatever
+        :returns: a list of pairs (key,value) for date/time/whatever
         :rtype: list
         """
         regex_pattern_list = patterns.DATELIST[start:end]

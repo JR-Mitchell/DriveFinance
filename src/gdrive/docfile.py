@@ -67,7 +67,7 @@ class DocFile(obj.DocObject):
             defaults to "text/plain"
         :type mimetype: str, optional
 
-        :return: the text stored inside this document on drive
+        :returns: the text stored inside this document on drive
         :rtype: str
         """
         my_file = StringIO.StringIO()

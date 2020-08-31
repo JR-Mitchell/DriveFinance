@@ -95,7 +95,7 @@ class ParsedSchedule(object):
 
         :raises Exception: Exception if regex match fails
 
-        :return: a timestamp representing the input string
+        :returns: a timestamp representing the input string
         :rtype: class:`pd.Timestamp`
         """
         regex_pattern_list = patterns.DATELIST[:noitems]

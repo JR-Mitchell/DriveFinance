@@ -22,7 +22,7 @@ class InputFileReader(object):
 
         :param index: the line index
         :type index: int
-        :return: The line at given index
+        :returns: The line at given index
         :rtype: str
         """
         return self._lines[arg]
