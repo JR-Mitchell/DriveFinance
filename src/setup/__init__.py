@@ -1,6 +1,7 @@
 import config
 import basicinput as input
 import reports
+import shortcuts
 import src.gdrive.drivefolder as odf
 import src.financedata as fdat
 import os, datetime
@@ -72,8 +73,18 @@ def default_setup_flow(foldername=None):
     print("Do you want to set up payment shortcuts? (y/N)")
     shortcut_init = input.yes_no_input()
     if shortcut_init:
-        #TODO
-        assert False, "Not yet implemented!"
+        #Get parsed payments file
+        import src.parse.shortcuts as shortparse
+        raw_shortcut_file = drive_folder.child_file("Shortcuts")
+        parsed_shortcut_file = shortparse.ParsedShortcuts(raw_shortcut_file)
+        #Do shortcuts flow
+        while shortcut_init:
+            shortcuts.shortcut_setup_flow(parsed_shortcut_file)
+            print("Do you want to set up another payment shortcut? (y/N)")
+            shortcut_init = input.yes_no_input()
+        #Save to drive
+        write_text = "\r\n".join([line for line in parsed_shortcut_file])
+        raw_shortcut_file.write_from_string(write_text)
     #Opt: initialise report(s)
     print("Do you want to create/modify/clone a report? (y/N)")
     report_init = input.yes_no_input()

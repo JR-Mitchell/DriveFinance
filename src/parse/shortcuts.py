@@ -13,3 +13,19 @@ class ParsedShortcuts(filereader.InputFileReader):
         self.dict = dict([
             [item.strip() for item in line.split(":")]
             for line in self._lines])
+
+    """ Adds a shortcut to the file
+
+    :param key: The shortcut key, beginning with an asterisk
+    :type key: string
+    :param code: The payment code
+    :type code: string
+    """
+    def add_line(self,key,code):
+        if key in self.dict:
+            #Modifying codes not yet implemented
+            errorcode = "This shortcut key already exists!"
+            raise Exception(errorcode)
+        else:
+            self.dict[key] = code
+            self._lines.append("{}: {}".format(key,code))
