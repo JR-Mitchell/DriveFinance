@@ -173,7 +173,7 @@ class FinanceData(object):
 
     def check_discrepancy(self,account_name,expected_balance):
         """ Allows the user to input the current real-world balance of an
-        account and creates a discrepancy item accounting how much it differs 
+        account and creates a discrepancy item accounting how much it differs
         from DriveFinance's calculated balance for this account
 
         :param account_name: the name of the account
@@ -182,8 +182,8 @@ class FinanceData(object):
         :type expected_balance: float
         """
         current_balance = float(self.account_balances \
-            [self.account_balances["from"]==account_name] \
-            .get("amount") \
+            [self.account_balances["account"]==account_name] \
+            .get("balance") \
             .tolist()[0])
         #difference between current and expected
         discrepancy = round(current_balance - expected_balance,2)
@@ -205,15 +205,15 @@ class FinanceData(object):
                 self.payment_db.query(response_str,inplace=True)
             query_str = "type == 'discrepancy' and frmo == '{}'"
             query_str = query_str.format(account_name)
-            discrep_q = self.payment_db.rename(columns={"from","frmo"}) \
+            discrep_q = self.payment_db.rename(columns={"from":"frmo"}) \
                                        .query(query_str)
             if not discrep_q.empty:
                 response_str = "type != 'discrepancy' or frmo != '{}'"
                 response_str = response_str.format(account_name)
                 previous_discrepancy = discrep_q.get("amount").tolist()[0]
-                self.payment_db.rename(columns={"from","frmo"},inplace=True)
+                self.payment_db.rename(columns={"from":"frmo"},inplace=True)
                 self.payment_db.query(response_str,inplace=True)
-                self.payment_db.rename(columns={"frmo","from"},inplace=True)
+                self.payment_db.rename(columns={"frmo":"from"},inplace=True)
             #get id time
             id_time = datetime.datetime.now()
             #create new discrepancy
